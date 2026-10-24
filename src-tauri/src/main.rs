@@ -48,6 +48,94 @@ fn set_dock_visible(app: tauri::AppHandle, visible: bool) -> Result<(), String> 
 }
 
 #[tauri::command]
+fn set_taskbar_visible(visible: bool) -> Result<(), String> {
+    #[cfg(target_os = "windows")]
+    unsafe {
+        use winapi::um::winuser::{FindWindowW, ShowWindow, SW_HIDE, SW_SHOW};
+        use std::ffi::OsStr;
+        use std::iter::once;
+        use std::os::windows::ffi::OsStrExt;
+        let name: Vec<u16> = OsStr::new("Shell_TrayWnd").encode_wide().chain(once(0)).collect();
+        let hwnd = FindWindowW(name.as_ptr(), std::ptr::null());
+        if !hwnd.is_null() {
+            ShowWindow(hwnd, if visible { SW_SHOW } else { SW_HIDE });
+        }
+    }
+    Ok(())
+}
+
+#[tauri::command]
+fn show_overlay(app: tauri::AppHandle, kind: String, value: f64) -> Result<(), String> {
+    use tauri::{Emitter, Manager};
+    if let Some(overlay) = app.get_webview_window("overlay") {
+        if let Ok(Some(monitor)) = overlay.primary_monitor() {
+            let ms = monitor.size();
+            let y = ms.height.saturating_sub(84) / 2;
+            let _ = overlay.set_position(tauri::Position::Physical(
+                tauri::PhysicalPosition { x: 24, y: y as i32 },
+            ));
+        }
+        let _ = overlay.show();
+        let _ = app.emit("nfp-overlay", serde_json::json!({ "kind": kind, "value": value }));
+    }
+    Ok(())
+}
+
+#[tauri::command]
+fn volume_level() -> Result<f32, String> {
+    #[cfg(target_os = "windows")]
+    unsafe {
+        use winapi::shared::mmdeviceapi::{eConsole, eRender, CLSID_MMDeviceEnumerator, IID_IMMDeviceEnumerator, IMMDevice, IMMDeviceEnumerator};
+        use winapi::shared::endpointvolume::{IAudioEndpointVolume, IID_IAudioEndpointVolume};
+        use winapi::um::combaseapi::{CoCreateInstance, CoInitializeEx, CLSCTX_ALL};
+        use winapi::um::objbase::COINIT_APARTMENTTHREADED;
+        use std::ptr::null_mut;
+        // Sengaja tanpa CoUninitialize: COM mungkin sudah diinisialisasi Tauri,
+        // dan CoUninitialize yang tidak berpasangan bisa mematikan COM-nya.
+        let _ = CoInitializeEx(null_mut(), COINIT_APARTMENTTHREADED);
+        let mut enumerator: *mut IMMDeviceEnumerator = null_mut();
+        let hr = CoCreateInstance(
+            &CLSID_MMDeviceEnumerator,
+            null_mut(),
+            CLSCTX_ALL,
+            &IID_IMMDeviceEnumerator,
+            &mut enumerator as *mut *mut IMMDeviceEnumerator as *mut *mut std::ffi::c_void,
+        );
+        if hr != 0 || enumerator.is_null() {
+            return Err(format!("enumerator gagal: {:#x}", hr as u32));
+        }
+        let mut device: *mut IMMDevice = null_mut();
+        let hr = (*enumerator).GetDefaultAudioEndpoint(eRender, eConsole, &mut device);
+        (*enumerator).Release();
+        if hr != 0 || device.is_null() {
+            return Err(format!("perangkat audio gagal: {:#x}", hr as u32));
+        }
+        let mut vol: *mut IAudioEndpointVolume = null_mut();
+        let hr = (*device).Activate(
+            &IID_IAudioEndpointVolume,
+            CLSCTX_ALL,
+            null_mut(),
+            &mut vol as *mut *mut IAudioEndpointVolume as *mut *mut std::ffi::c_void,
+        );
+        (*device).Release();
+        if hr != 0 || vol.is_null() {
+            return Err(format!("endpoint volume gagal: {:#x}", hr as u32));
+        }
+        let mut level: f32 = 0.0;
+        let hr = (*vol).GetMasterVolumeLevelScalar(&mut level);
+        (*vol).Release();
+        if hr != 0 {
+            return Err(format!("baca volume gagal: {:#x}", hr as u32));
+        }
+        Ok(level * 100.0)
+    }
+    #[cfg(not(target_os = "windows"))]
+    {
+        Err("volume hanya tersedia di Windows".to_string())
+    }
+}
+
+#[tauri::command]
 async fn send_notification(
     app: tauri::AppHandle,
     title: String,
@@ -198,13 +286,21 @@ fn main() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_notification::init())
+        .on_window_event(|_window, event| {
+            if let tauri::WindowEvent::CloseRequested { .. } = event {
+                let _ = set_taskbar_visible(true);
+            }
+        })
         .invoke_handler(tauri::generate_handler![
             pick_file,
             open_path,
             media_key,
             wifi_status,
             send_notification,
-            set_dock_visible
+            set_dock_visible,
+            set_taskbar_visible,
+            show_overlay,
+            volume_level
         ])
         .setup(|app| {
             // Posisikan jendela di atas-tengah layar utama.

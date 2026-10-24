@@ -39,12 +39,24 @@ body {
    sehingga tinggi panel cukup untuk satu tab, bukan semua kartu sekaligus. */
 /* v0.5: saat membesar pun tetap menggantung dari tepi atas, sudut bawah
    saja yang membulat, tanpa border/bayangan kotak. */
-.notch:hover,
+/* v0.9: mode Notch TIDAK lagi membesar hanya karena mouse menyentuh tepi
+   atas — panel hanya terbuka lewat klik. Saat tidak dipakai, notch menyusut
+   jadi garis hitam tipis di tepi atas (lihat body.notch-idle di bawah). */
 .notch.expanded {
   height: 540px;
   border-radius: 0 0 20px 20px;
   overflow: hidden;
 }
+
+/* v0.9: garis idle — notch ciut jadi garis hitam 6px saat mouse menjauh. */
+body.notch-idle .notch {
+  width: 220px;
+  height: 6px;
+  background: #000000;
+  border-radius: 0 0 8px 8px;
+}
+body.notch-idle .notch-bar,
+body.notch-idle .panel { display: none; }
 
 .notch-bar {
   display: flex;

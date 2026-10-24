@@ -235,6 +235,62 @@
     });
   }
 
+  // ---------- v0.9: garis idle di tepi atas (mode Notch saja) ----------
+  var idleTimer = null;
+  function goIdle() {
+    if (document.body.classList.contains("bar-mode")) { return; }
+    if (notch.classList.contains("expanded")) { return; }
+    document.body.classList.add("notch-idle");
+  }
+  function wakeIdle() {
+    document.body.classList.remove("notch-idle");
+    if (idleTimer) { clearTimeout(idleTimer); }
+    idleTimer = setTimeout(goIdle, 4000);
+  }
+  document.body.addEventListener("mouseenter", wakeIdle);
+  document.body.addEventListener("mouseleave", function () {
+    if (idleTimer) { clearTimeout(idleTimer); }
+    idleTimer = setTimeout(goIdle, 3000);
+  });
+  idleTimer = setTimeout(goIdle, 4000);
+
+  // ---------- v0.9: taskbar Windows bisa digantikan Dock ----------
+  var taskbarHidden = false;
+  function setTaskbarUI(v) {
+    var b = $("btn-taskbar-toggle");
+    if (b) { b.textContent = v ? "Taskbar Windows: Sembunyi" : "Taskbar Windows: Tampil"; }
+  }
+  (function initTaskbar() {
+    try { taskbarHidden = window.localStorage.getItem("nfp_taskbar_hidden") === "on"; } catch (e) { taskbarHidden = false; }
+    setTaskbarUI(taskbarHidden);
+    tauriInvoke("set_taskbar_visible", { visible: !taskbarHidden });
+  })();
+  var taskbarBtn = $("btn-taskbar-toggle");
+  if (taskbarBtn) {
+    taskbarBtn.addEventListener("click", function () {
+      taskbarHidden = !taskbarHidden;
+      try { window.localStorage.setItem("nfp_taskbar_hidden", taskbarHidden ? "on" : "off"); } catch (e) {}
+      setTaskbarUI(taskbarHidden);
+      tauriInvoke("set_taskbar_visible", { visible: !taskbarHidden });
+    });
+  }
+
+  // ---------- v0.9: overlay volume (polling level sistem tiap 1 detik) ----------
+  var lastVolume = null, volumeFailures = 0;
+  setInterval(function () {
+    tauriInvoke("volume_level").then(function (v) {
+      if (typeof v !== "number") { return; }
+      volumeFailures = 0;
+      if (lastVolume !== null && Math.abs(v - lastVolume) >= 2) {
+        tauriInvoke("show_overlay", { kind: "volume", value: Math.round(v) });
+      }
+      lastVolume = v;
+    }).catch(function () {
+      volumeFailures += 1;
+      if (volumeFailures > 10) { lastVolume = null; }
+    });
+  }, 1000);
+
   // ---------- v0.6/v0.7: menu bar ala MacBook ----------
   document.querySelectorAll(".bar-menu").forEach(function (btn) {
     btn.addEventListener("click", function () {
@@ -625,6 +681,14 @@
       function renderBattery() {
         var pct = Math.round(battery.level * 100);
         $("battery-status").textContent = pct + "%" + (battery.charging ? " (mengisi daya)" : "");
+        // v0.9: beri tahu saat charger dicolok/dilepas (bukan saat pertama baca).
+        if (typeof window.__nfpPrevCharging === "boolean" && window.__nfpPrevCharging !== battery.charging) {
+          tauriInvoke("send_notification", {
+            title: "Pengisi daya",
+            body: battery.charging ? ("Pengisi daya terhubung \u2014 baterai " + pct + "%") : ("Pengisi daya dilepas \u2014 baterai " + pct + "%")
+          });
+        }
+        window.__nfpPrevCharging = battery.charging;
         var barBattery = $("bar-battery");
         if (barBattery) { barBattery.textContent = "Baterai " + pct + "%" + (battery.charging ? " ⚡" : ""); }
       }

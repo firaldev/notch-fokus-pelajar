@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Overlay</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: transparent; font-family: system-ui, "Segoe UI", Arial, sans-serif; color: #f2f2f2; }
+  body { display: flex; align-items: center; justify-content: center; height: 100vh; }
+  .box {
+    display: flex; align-items: center; gap: 12px; width: 280px; padding: 14px 16px;
+    background: rgba(30, 30, 35, 0.85); border: 1px solid rgba(255,255,255,0.18); border-radius: 18px;
+  }
+  .icon { width: 28px; height: 28px; flex-shrink: 0; }
+  .icon svg { width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .track { flex: 1; height: 8px; background: #3f3f46; border-radius: 4px; overflow: hidden; }
+  .fill { height: 100%; background: #f2f2f2; border-radius: 4px; width: 50%; }
+  .pct { font-size: 15px; font-variant-numeric: tabular-nums; width: 44px; text-align: right; }
+</style>
+</head>
+<body>
+  <div class="box">
+    <div class="icon"><svg viewBox="0 0 24 24"><path d="M11 5L6 9H3v6h3l5 4z"/><path d="M15 9a4 4 0 0 1 0 6M18 6a8 8 0 0 1 0 12"/></svg></div>
+    <div class="track"><div class="fill" id="ov-fill"></div></div>
+    <div class="pct" id="ov-pct">50%</div>
+  </div>
+  <script>
+    (function () {
+      var timer = null;
+      function hideSoon() {
+        if (timer) { clearTimeout(timer); }
+        timer = setTimeout(function () {
+          try {
+            if (window.__TAURI__ && window.__TAURI__.window) {
+              window.__TAURI__.window.getCurrentWindow().hide();
+            }
+          } catch (e) {}
+        }, 2500);
+      }
+      if (window.__TAURI__ && window.__TAURI__.event && window.__TAURI__.event.listen) {
+        window.__TAURI__.event.listen("nfp-overlay", function (e) {
+          var v = e && e.payload && typeof e.payload.value === "number" ? e.payload.value : 0;
+          document.getElementById("ov-fill").style.width = v + "%";
+          document.getElementById("ov-pct").textContent = Math.round(v) + "%";
+          hideSoon();
+        });
+      }
+      hideSoon();
+    })();
+  </script>
+</body>
+</html>
