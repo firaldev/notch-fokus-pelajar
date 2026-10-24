@@ -1,0 +1,1 @@
+{"$schema":"../gen/schemas/capabilities-schema.json","description":"Capability for the main window of Notch Fokus Pelajar","identifier":"default","permissions":["core:default","core:window:allow-set-size","core:window:allow-set-position","core:window:allow-inner-size","core:window:allow-start-dragging","dialog:allow-open","opener:allow-open-path"],"windows":["main"]}
