@@ -74,6 +74,16 @@ body.notch-idle .panel { display: none; }
 .lyric-line { display: none; flex: 1; min-width: 0; text-align: center; font-size: 14px; color: #f2f2f2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .lyric-line.on { display: block; }
 
+/* v0.14: pil musik minimal — saat lagu diputar, bar ciut jadi pil
+   ringkas "ikon + baris lirik" (atau "ikon + judul - artis" bila tanpa
+   lirik), tanpa jam/titik/tombol lain. */
+#music-pill { display: none; }
+#music-pill-measure { position: absolute; visibility: hidden; white-space: nowrap; font-size: 14px; pointer-events: none; }
+body.music-pill .notch-bar > :not(#music-pill):not(#music-pill-measure) { display: none !important; }
+body.music-pill #music-pill { display: block; flex: 1; min-width: 0; text-align: center; font-size: 14px; color: #f2f2f2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+body.music-pill .notch-bar { justify-content: center; height: 32px; }
+body.music-pill .notch { border-radius: 0 0 16px 16px; }
+
 /* v0.14: sorotan saat file/aplikasi diseret ke atas Shelf. */
 .card.drop-active { outline: 2px dashed #8b8cf8; outline-offset: -2px; background: #26262e; }
 
@@ -94,36 +104,6 @@ body.notch-idle .panel { display: none; }
   height: 56px;
   padding: 0 14px;
 }
-
-/* v0.3 Bar mode: bar atas permanen ala menu bar macOS, full-width,
-   tinggi 32px saat ciut. Panel tetap 440px dan terpusat di bawah bar
-   saat membesar, jadi panel tidak ikut melebar penuh. */
-/* v0.5: bar ciut dibuat tembus pandang gelap (bukan kotak hitam pekat),
-   tanpa border. Saat membesar, latar bar jadi transparan dan panel
-   hitam 440px-lah yang menggantung di bawahnya. */
-body.bar-mode { padding-top: 0; }
-.notch.bar-mode {
-  width: 100vw;
-  max-width: none;
-  background: rgba(0, 0, 0, 0.6);
-  border-radius: 0;
-  border: none;
-  height: 32px;
-}
-.notch.bar-mode.expanded { background: transparent; }
-.notch.bar-mode.expanded .panel {
-  background: #000000;
-  border-radius: 0 0 20px 20px;
-}
-.notch.bar-mode .notch-bar { height: 32px; padding: 0 12px; }
-.notch.bar-mode:hover,
-.notch.bar-mode.expanded {
-  height: 540px;
-  border-radius: 0;
-  overflow: hidden;
-}
-.notch.bar-mode .panel { width: 440px; margin: 0 auto; }
-#btn-mode { background: transparent; font-size: 12px; padding: 4px 8px; white-space: nowrap; }
 
 .notch-dot {
   width: 10px;
@@ -150,7 +130,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid #facc15; outline-
 
 #toggle-panel { background: transparent; border: none; font-size: 16px; padding: 4px 6px; margin-left: 4px; }
 
-.panel { padding: 4px 14px 14px; }
+.panel { padding: 4px 0 14px; }
 .banner { background: #3f6212; border: 1px solid #65a30d; border-radius: 10px; padding: 10px; }
 .hidden { display: none !important; }
 
@@ -162,6 +142,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid #facc15; outline-
   align-items: center;
   gap: 10px;
   margin: 6px 0 2px;
+  padding: 0 10px;
 }
 .page-head { flex: 1; text-align: center; }
 .page-head strong { display: block; font-size: 15px; }
@@ -186,7 +167,9 @@ button:focus-visible, input:focus-visible { outline: 2px solid #facc15; outline-
 .card {
   background: #18181b;
   border: 1px solid #27272a;
-  border-radius: 14px;
+  border-left: none;
+  border-right: none;
+  border-radius: 0;
   padding: 12px;
   margin: 8px 0;
 }
@@ -229,46 +212,15 @@ input[type="number"] { width: 76px; }
 .hint { color: #a1a1aa; font-size: 13px; }
 
 
-/* v0.6 Bar Apps ala MacBook: di Bar mode, header jadi menu bar sungguhan.
-   Kiri: nama aplikasi + menu Fokus/Tugas/Lainnya (klik = buka panel ke tab itu).
-   Kanan: menu extras ala macOS — tombol musik, Wi-Fi, baterai, jam.
-   Di mode Notch, semua ini disembunyikan supaya pil tetap ringkas. */
-.bar-menus, .bar-extras { display: none; }
-body.bar-mode .bar-menus { display: flex; gap: 4px; }
-body.bar-mode .bar-extras {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  font-size: 12px;
-  white-space: nowrap;
-}
-.bar-menu {
-  background: transparent;
-  border: none;
-  font-size: 12px;
-  padding: 2px 6px;
-}
-.bar-menu:hover { background: #3f3f46; }
-.bar-btn {
-  background: transparent;
-  border: none;
-  font-size: 13px;
-  padding: 2px 4px;
-}
-.bar-btn:hover { background: #3f3f46; }
-
 /* v0.7 header minimal gaya Nusa (mode Notch): pil tertutup hanya titik + jam/timer. */
-body:not(.bar-mode) .notch-bar { justify-content: center; }
-body:not(.bar-mode) .notch-title,
-body:not(.bar-mode) #btn-mode,
-body:not(.bar-mode) #toggle-panel { display: none; }
+.notch-bar { justify-content: center; }
+.notch-title, #toggle-panel { display: none; }
 .notch-clock { font-weight: 700; white-space: nowrap; }
 /* Grafik air harian */
 .water-chart { font-size: 12px; color: #d4d4d8; }
 .water-bar-row { display: flex; gap: 8px; align-items: center; margin: 4px 0; }
 .water-bar { display: inline-block; height: 10px; background: #38bdf8; border-radius: 5px; }
 
-body.bar-mode .notch-clock { display: none; }
 
 /* v0.10: info lagu gaya Nusa di halaman Musik. */
 .music-track { font-weight: 700; font-size: 17px; margin: 8px 0 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

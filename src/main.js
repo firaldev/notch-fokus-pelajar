@@ -80,7 +80,9 @@
   var pageTitles = { music: "Musik", focus: "Pomodoro", water: "Water Reminder", todo: "To-do Tugas", shelf: "Shelf", status: "Status" };
   var currentPage = "music";
   var pageHeights = { music: 250, focus: 420, water: 540, todo: 480, shelf: 420, status: 380 };
-  var displayMode = load("nfp_mode", "notch"); // "notch" | "bar"
+  // v0.14: mode Bar dihapus total — hanya mode Notch. Bersihkan setelan lama.
+  try { window.localStorage.removeItem("nfp_mode"); } catch (e) {}
+  var musicPillActive = false, musicPillWidth = 0;
   function monitorLogicalWidth(callback) {
     var win = tauriWindow();
     try {
@@ -103,7 +105,7 @@
   function expandedHeight() {
     try {
       var panel = $("panel");
-      var headerH = displayMode === "bar" ? 32 : 56;
+      var headerH = 56;
       if (panel) {
         var h = panel.scrollHeight;
         if (h && h > 0) { return headerH + h + 2; }
@@ -111,75 +113,45 @@
     } catch (e) {}
     return pageHeights[currentPage] || 540;
   }
+  var lastWinWidth = 440;
   function setNotchSize(expanded) {
     var win = tauriWindow();
     var n = $("notch");
-    if (expanded) {
-      var eh = expandedHeight();
-      if (n) { n.style.height = eh + "px"; }
+    var pill = !expanded && musicPillActive;
+    if (pill) {
+      document.body.classList.add("music-pill");
+      document.body.classList.remove("notch-idle");
+      if (n) { n.style.width = musicPillWidth + "px"; n.style.height = "32px"; }
     } else {
-      if (n) { n.style.height = ""; }
+      document.body.classList.remove("music-pill");
+      if (n) {
+        n.style.width = "";
+        n.style.height = expanded ? (expandedHeight() + "px") : "";
+      }
     }
     if (win && win.setSize) {
       try {
-        if (displayMode === "bar") {
-          monitorLogicalWidth(function (w) {
+        var w = pill ? (musicPillWidth > 0 ? musicPillWidth : 320) : 440;
+        var h = expanded ? expandedHeight() : (pill ? 32 : 56);
+        win.setSize(new window.__TAURI__.window.LogicalSize(w, h)).catch(function () { /* biarkan CSS yang bekerja */ });
+        if (w !== lastWinWidth) {
+          lastWinWidth = w;
+          monitorLogicalWidth(function (sw) {
             try {
-              var h = expanded ? expandedHeight() : 32;
-              win.setSize(new window.__TAURI__.window.LogicalSize(w, h)).catch(function () { /* biarkan CSS yang bekerja */ });
-              if (win.setPosition) {
-                win.setPosition(new window.__TAURI__.window.LogicalPosition(0, 0)).catch(function () {});
-              }
-            } catch (e) { /* biarkan CSS yang bekerja */ }
+              if (win.setPosition) { win.setPosition(new window.__TAURI__.window.LogicalPosition(Math.round((sw - w) / 2), 0)).catch(function () {}); }
+            } catch (e) {}
           });
-        } else {
-          var size = expanded
-            ? new window.__TAURI__.window.LogicalSize(440, expandedHeight())
-            : new window.__TAURI__.window.LogicalSize(440, 56);
-          win.setSize(size).catch(function () { /* biarkan CSS yang bekerja */ });
         }
       } catch (e) { /* biarkan CSS yang bekerja */ }
     }
   }
 
   var notch = $("notch");
-  function applyMode(mode, updateWindow) {
-    displayMode = mode;
-    save("nfp_mode", mode);
-    notch.classList.toggle("bar-mode", mode === "bar");
-    document.body.classList.toggle("bar-mode", mode === "bar");
-    var header = notch.querySelector(".notch-bar");
-    if (header) {
-      if (mode === "bar") { header.removeAttribute("data-tauri-drag-region"); }
-      else { header.setAttribute("data-tauri-drag-region", ""); }
-    }
-    var modeBtn = $("btn-mode");
-    if (modeBtn) { modeBtn.textContent = mode === "bar" ? "Notch" : "Bar"; }
-    if (updateWindow) {
-      setNotchSize(notch.classList.contains("expanded"));
-      if (mode === "notch") {
-        // Kembali ke tengah atas setelah dari Bar mode.
-        var win = tauriWindow();
-        if (win && win.setPosition) {
-          monitorLogicalWidth(function (w) {
-            try {
-              win.setPosition(new window.__TAURI__.window.LogicalPosition(Math.round((w - 440) / 2), 0)).catch(function () {});
-            } catch (e) {}
-          });
-        }
-      }
-    }
-  }
-  applyMode(displayMode, true);
   notch.addEventListener("mouseenter", function () {
-    // Bar mode tidak membesar saat hover, supaya bar atas tidak terbuka
-    // tiap kali mouse menyentuh tepi atas layar — panel dibuka lewat ▾.
-    if (displayMode === "bar") { return; }
     notch.classList.add("expanded");
     setNotchSize(true);
   });
   notch.addEventListener("mouseleave", function () {
-    if (displayMode === "bar") { return; }
     notch.classList.remove("expanded");
     setNotchSize(false);
   });
@@ -187,9 +159,19 @@
     var expanded = notch.classList.toggle("expanded");
     setNotchSize(expanded);
   });
-  $("btn-mode").addEventListener("click", function () {
-    applyMode(displayMode === "bar" ? "notch" : "bar", true);
-  });
+  // v0.14: klik pil musik membuka panel ke halaman Musik.
+  var headerBar = notch.querySelector(".notch-bar");
+  if (headerBar) {
+    headerBar.addEventListener("click", function () {
+      if (musicPillActive) {
+        showPage("music");
+        if (!notch.classList.contains("expanded")) {
+          notch.classList.add("expanded");
+          setNotchSize(true);
+        }
+      }
+    });
+  }
 
   // ---------- Halaman gaya Nusa: panah + titik, satu halaman per fitur ----------
   function showPage(page) {
@@ -281,8 +263,9 @@
   // v0.10: saat idle, jendela ikut menyusut jadi 440x6 — tidak ada area
   // jendela kosong yang bisa tampil sebagai kotak putih.
   function goIdle() {
-    if (document.body.classList.contains("bar-mode")) { return; }
     if (notch.classList.contains("expanded")) { return; }
+    if (musicPillActive) { return; }
+    if (typeof currentLyricText !== "undefined" && currentLyricText) { return; }
     document.body.classList.add("notch-idle");
     var win = tauriWindow();
     if (win && win.setSize) {
@@ -290,11 +273,6 @@
     }
   }
   function wakeIdle() {
-    if (document.body.classList.contains("bar-mode")) {
-      if (idleTimer) { clearTimeout(idleTimer); }
-      idleTimer = setTimeout(goIdle, 4000);
-      return;
-    }
     document.body.classList.remove("notch-idle");
     if (idleTimer) { clearTimeout(idleTimer); }
     idleTimer = setTimeout(goIdle, 4000);
@@ -337,6 +315,7 @@
   // (indikator volume/kecerahan), atau 'lyrics' (satu baris lirik).
   // Level selalu menang atas lirik selama 2,5 detik tampilnya.
   function setBarCenter(mode) {
+    if (document.body.classList.contains("music-pill")) { return; }
     var clock = $("notch-clock"); if (clock) { clock.style.display = mode === "normal" ? "" : "none"; }
     var title = notch.querySelector(".notch-title"); if (title) { title.style.display = mode === "normal" ? "" : "none"; }
     var timer = $("mini-timer"); if (timer) { timer.style.display = mode === "normal" ? "" : "none"; }
@@ -364,6 +343,11 @@
   function endTransient() {
     transientKind = null;
     transientTimer = null;
+    if (musicPillActive && !notch.classList.contains("expanded")) {
+      var pill = $("music-pill");
+      if (pill) { pill.textContent = deriveMusicPillText(); }
+      return;
+    }
     if (typeof currentLyricText !== "undefined" && currentLyricText) { setBarCenter("lyrics"); }
     else { setBarCenter("normal"); }
     if (transientWasIdle) { goIdle(); }
@@ -374,17 +358,167 @@
     $("level-icon").textContent = kind === "brightness" ? "☀" : "🔊";
     $("level-fill").style.width = pct + "%";
     $("level-pct").textContent = pct + "%";
+    if (musicPillActive && !notch.classList.contains("expanded")) {
+      var lpill = $("music-pill");
+      if (lpill) { lpill.textContent = (kind === "brightness" ? "☀ " : "🔊 ") + pct + "%"; }
+    }
     showTransient("level", 2500);
   }
   function showCharger(connected, pct) {
     var el = $("charger-mini");
     if (!el) { return; }
     el.textContent = connected ? ("⚡ Charger terhubung • " + pct + "%") : ("🔌 Charger dilepas • " + pct + "%");
+    if (musicPillActive && !notch.classList.contains("expanded")) {
+      var cpill = $("music-pill");
+      if (cpill) { cpill.textContent = el.textContent; }
+    }
     showTransient("charger", 3000);
   }
 
   // ---------- v0.12: polling level sistem (tampil di bar atas) ----------
   var lastVolume = null, volumeFailures = 0;
+  // ---------- v0.14: pil musik minimal ----------
+  // Saat lagu diputar, bar ciut jadi pil ringkas "ikon + baris lirik"
+  // (atau "ikon + judul - artis" bila lagu tanpa lirik). Klik pil membuka
+  // panel ke halaman Musik.
+  function deriveMusicPillText() {
+    var t = currentLyricText || currentMusicTitle || "";
+    if (!currentLyricText && currentMusicTitle && currentMusicArtist) { t = currentMusicTitle + " - " + currentMusicArtist; }
+    return t ? ("♫ " + t) : "";
+  }
+  function refreshMusicPill(info) {
+    var should = !!(info && info.title && info.playing);
+    var was = musicPillActive;
+    musicPillActive = should;
+    if (!should) {
+      if (was) { setNotchSize(notch.classList.contains("expanded")); }
+      return;
+    }
+    var oldW = musicPillWidth;
+    var m = $("music-pill-measure");
+    if (m) {
+      m.textContent = deriveMusicPillText();
+      var w = m.scrollWidth + 32;
+      if (w < 260) { w = 260; }
+      if (w > 560) { w = 560; }
+      musicPillWidth = w;
+    }
+    if (!transientKind) {
+      var pill = $("music-pill");
+      if (pill) { pill.textContent = deriveMusicPillText(); }
+    }
+    // Ukuran jendela hanya diubah saat pil baru aktif atau lebarnya berubah,
+    // supaya tidak ada setSize tiap detik dari interval media.
+    if (!notch.classList.contains("expanded") && (!was || musicPillWidth !== oldW)) { setNotchSize(false); }
+  }
+  setInterval(function () {
+    tauriInvoke("volume_level").then(function (v) {
+      if (typeof v !== "number") { return; }
+      volumeFailures = 0;
+      if (lastVolume !== null && Math.abs(v - lastVolume) >= 2) {
+        showLevel("volume", Math.round(v));
+      }
+      lastVolume = v;
+    }).catch(function () {
+      volumeFailures += 1;
+      if (volumeFailures > 10) { lastVolume = null; }
+    });
+  }, 1000);
+
+  // ---------- v0.10: info lagu dari pemutar aktif (GSMTC Windows) ----------
+  function fmtTime(sec) {
+    sec = Math.max(0, Math.floor(sec || 0));
+    var m = Math.floor(sec / 60), s = sec % 60;
+    return (m < 10 ? "0" + m : m) + ":" + (s < 10 ? "0" + s : s);
+  }
+  var currentMusicTitle = "", currentMusicArtist = "";
+  // ---------- v0.13: satu baris lirik tersinkron di bar atas ----------
+  // v0.14: lirik selalu tampil kalau ada. Synced diutamakan; kalau hanya
+  // ada lirik polos, barisnya berjalan proporsional dengan posisi lagu.
+  // Pencarian jatuh ke /api/search bila /api/get tidak menemukan.
+  var lyricTrackKey = "", lyricLines = [], lyricPlainLines = [], currentLyricText = "", currentDurationSecs = 0;
+  function applyLyricData(data, key) {
+    if (key !== lyricTrackKey) { return; }
+    var synced = (data && data.syncedLyrics) || "";
+    var lines = [];
+    synced.split(/\r?\n/).forEach(function (ln) {
+      var m = ln.match(/^\[(\d+):(\d+(?:\.\d+)?)\]\s*(.*)$/);
+      if (m) { lines.push({ t: parseInt(m[1], 10) * 60 + parseFloat(m[2]), text: (m[3] || "").trim() }); }
+    });
+    lines.sort(function (a, b) { return a.t - b.t; });
+    lyricLines = lines;
+    if (!lines.length) {
+      var plain = (data && data.plainLyrics) || "";
+      lyricPlainLines = plain.split(/\r?\n/).map(function (t) { return t.trim(); }).filter(function (t) { return t.length > 0; });
+    } else { lyricPlainLines = []; }
+  }
+  function fetchLyrics(title, artist) {
+    var key = title + "\n" + artist;
+    if (key === lyricTrackKey) { return; }
+    lyricTrackKey = key; lyricLines = []; lyricPlainLines = []; currentLyricText = "";
+    if (!title) { if (!transientKind) { setBarCenter("normal"); } return; }
+    var url = "https://lrclib.net/api/get?artist_name=" + encodeURIComponent(artist || "") +
+      "&track_name=" + encodeURIComponent(title);
+    fetch(url).then(function (r) {
+      if (!r.ok) { throw new Error("no lyrics"); }
+      return r.json();
+    }).then(function (data) {
+      applyLyricData(data, key);
+      if (!lyricLines.length && !lyricPlainLines.length) {
+        return fetch("https://lrclib.net/api/search?artist_name=" + encodeURIComponent(artist || "") +
+          "&track_name=" + encodeURIComponent(title)).then(function (r) {
+          if (!r.ok) { throw new Error("no search"); }
+          return r.json();
+        }).then(function (list) {
+          var arr = Array.isArray(list) ? list : [];
+          var pick = null;
+          for (var i = 0; i < arr.length; i++) { if (arr[i].syncedLyrics) { pick = arr[i]; break; } }
+          if (!pick) { for (var j = 0; j < arr.length; j++) { if (arr[j].plainLyrics) { pick = arr[j]; break; } } }
+          if (pick) { applyLyricData(pick, key); }
+        });
+      }
+    }).catch(function () { /* tetap tanpa lirik: bar normal */ });
+  }
+  function updateLyricLine(pos) {
+    if (lyricPlainLines.length) {
+      var idx = currentDurationSecs > 0 ? Math.floor((pos || 0) / currentDurationSecs * lyricPlainLines.length) : 0;
+      if (idx >= lyricPlainLines.length) { idx = lyricPlainLines.length - 1; }
+      if (idx < 0) { idx = 0; }
+      var ptext = lyricPlainLines[idx];
+      if (ptext && ptext !== currentLyricText) {
+        currentLyricText = ptext;
+        $("lyric-line").textContent = ptext;
+        if (!transientKind) { setBarCenter("lyrics"); }
+      }
+      return;
+    }
+    if (!lyricLines.length) {
+      if (currentLyricText) {
+        currentLyricText = "";
+        if (!transientKind) { setBarCenter("normal"); }
+      }
+      return;
+    }
+    var text = "";
+    for (var i = 0; i < lyricLines.length; i++) {
+      if (lyricLines[i].t <= (pos || 0)) {
+        if (lyricLines[i].text) { text = lyricLines[i].text; }
+      } else { break; }
+    }
+    // Sebelum baris pertama (intro): tampilkan baris pertama, jadi lirik
+    // tidak pernah kosong selama lagu ber-lirik.
+    if (!text) {
+      for (var k = 0; k < lyricLines.length; k++) { if (lyricLines[k].text) { text = lyricLines[k].text; break; } }
+    }
+    if (text && text !== currentLyricText) {
+      currentLyricText = text;
+      $("lyric-line").textContent = text;
+      if (!transientKind) { setBarCenter("lyrics"); }
+    } else if (!text && currentLyricText) {
+      currentLyricText = "";
+      if (!transientKind) { setBarCenter("normal"); }
+    }
+  }
   setInterval(function () {
     tauriInvoke("volume_level").then(function (v) {
       if (typeof v !== "number") { return; }
@@ -458,7 +592,7 @@
   setInterval(function () {
     tauriInvoke("media_info").then(function (info) {
       if (!info || !info.title) {
-        currentMusicTitle = ""; currentMusicArtist = "";
+        currentMusicTitle = ""; currentMusicArtist = ""; currentDurationSecs = 0; refreshMusicPill(null);
         fetchLyrics("", "");
         $("music-track").textContent = "Tidak ada media";
         $("music-artist").textContent = "";
@@ -467,7 +601,7 @@
         $("music-fill").style.width = "0%";
         return;
       }
-      currentMusicTitle = info.title; currentMusicArtist = info.artist || "";
+      currentMusicTitle = info.title; currentMusicArtist = info.artist || ""; currentDurationSecs = info.duration_secs || 0;
       fetchLyrics(info.title, info.artist || "");
       updateLyricLine(info.position_secs);
       $("music-track").textContent = info.title;
@@ -477,7 +611,8 @@
       $("music-remaining").textContent = "-" + fmtTime(remain);
       var pct = info.duration_secs > 0 ? Math.min(100, Math.round(info.position_secs / info.duration_secs * 100)) : 0;
       $("music-fill").style.width = pct + "%";
-    }).catch(function () { /* tidak ada sesi media: biarkan tampilan terakhir */ });
+      refreshMusicPill(info);
+    }).catch(function () { refreshMusicPill(null); /* halaman musik biarkan tampilan terakhir */ });
   }, 1000);
 
   // ---------- v0.11: overlay kecerahan (polling WMI tiap 2 detik) ----------
@@ -499,14 +634,6 @@
     });
   }, 2000);
 
-  // ---------- v0.6/v0.7: menu bar ala MacBook ----------
-  document.querySelectorAll(".bar-menu").forEach(function (btn) {
-    btn.addEventListener("click", function () {
-      showPage(btn.getAttribute("data-bar-page"));
-      notch.classList.add("expanded");
-      setNotchSize(true);
-    });
-  });
   // ---------- Jam ----------
   function tickClock() {
     var now = new Date();
@@ -528,14 +655,10 @@
     updateClosedHeader();
   }
   function updateClosedHeader() {
+    if (document.body.classList.contains("music-pill")) { return; }
     var nc = $("notch-clock");
     var mt = $("mini-timer");
     if (!nc || !mt) { return; }
-    if (document.body.classList.contains("bar-mode")) {
-      nc.style.display = "";
-      mt.style.display = "";
-      return;
-    }
     if (typeof running !== "undefined" && running) {
       nc.style.display = "none";
       mt.style.display = "";

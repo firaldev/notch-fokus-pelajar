@@ -8,8 +8,7 @@
 </head>
 <body>
   <main id="notch" class="notch" aria-label="Notch Fokus Pelajar">
-    <!-- Baris notch saat tertutup, gaya Nusa: minimal, hanya titik + jam/timer.
-         Di mode Bar, header ini jadi menu bar MacBook (judul + menu + extras). -->
+    <!-- Baris notch saat tertutup, gaya Nusa: minimal, hanya titik + jam/timer. -->
     <header class="notch-bar" data-tauri-drag-region>
       <span class="notch-dot" aria-hidden="true"></span>
       <span id="notch-clock" class="notch-clock" aria-live="polite">--:--</span>
@@ -17,19 +16,9 @@
       <span id="level-mini" class="level-mini" aria-live="polite"><span id="level-icon" class="level-icon">🔊</span><span class="level-track"><span id="level-fill" class="level-fill"></span></span><span id="level-pct" class="level-pct">50%</span></span>
       <span id="lyric-line" class="lyric-line" aria-live="polite"></span>
       <span id="charger-mini" class="charger-mini" aria-live="polite"></span>
-      <span class="bar-menus" aria-label="Menu bar">
-        <button class="bar-menu" type="button" data-bar-page="focus">Fokus</button>
-        <button class="bar-menu" type="button" data-bar-page="todo">Tugas</button>
-        <button class="bar-menu" type="button" data-bar-page="status">Status</button>
-      </span>
+      <span id="music-pill" class="music-pill" aria-live="polite"></span>
+      <span id="music-pill-measure" aria-hidden="true"></span>
       <span id="mini-timer" class="mini-timer" aria-live="polite">25:00 · Fokus</span>
-      <span class="bar-extras" aria-label="Status bar">
-        <button class="music-btn bar-btn" type="button" data-music="play-pause" aria-label="Putar atau jeda musik">⏯</button>
-        <span id="bar-wifi">Wi-Fi —</span>
-        <span id="bar-battery">Baterai —</span>
-        <span id="bar-clock">--:--</span>
-      </span>
-      <button id="btn-mode" type="button" aria-label="Ganti mode tampilan antara Notch dan Bar atas">Bar</button>
       <button id="toggle-panel" type="button" aria-label="Buka atau tutup panel">▾</button>
     </header>
 
