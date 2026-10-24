@@ -76,8 +76,10 @@
   // v0.3: mode Bar membuat jendela full-width 32px di atas layar,
   // diposisikan (0,0) dan tidak bisa digeser — seperti menu bar macOS.
   // Mode Notch kembali ke pil 440px yang bisa digeser.
-  var currentTab = "focus";
-  var tabHeights = { focus: 400, todo: 480, other: 540 };
+  var pages = ["music", "focus", "water", "todo", "shelf", "status"];
+  var pageTitles = { music: "Musik", focus: "Pomodoro", water: "Water Reminder", todo: "To-do Tugas", shelf: "Shelf", status: "Status" };
+  var currentPage = "music";
+  var pageHeights = { music: 380, focus: 420, water: 540, todo: 480, shelf: 420, status: 380 };
   var displayMode = load("nfp_mode", "notch"); // "notch" | "bar"
   function monitorLogicalWidth(callback) {
     var win = tauriWindow();
@@ -101,7 +103,7 @@
         if (displayMode === "bar") {
           monitorLogicalWidth(function (w) {
             try {
-              var h = expanded ? (tabHeights[currentTab] || 540) : 32;
+              var h = expanded ? (pageHeights[currentPage] || 540) : 32;
               win.setSize(new window.__TAURI__.window.LogicalSize(w, h)).catch(function () { /* biarkan CSS yang bekerja */ });
               if (win.setPosition) {
                 win.setPosition(new window.__TAURI__.window.LogicalPosition(0, 0)).catch(function () {});
@@ -110,7 +112,7 @@
           });
         } else {
           var size = expanded
-            ? new window.__TAURI__.window.LogicalSize(440, tabHeights[currentTab] || 540)
+            ? new window.__TAURI__.window.LogicalSize(440, pageHeights[currentPage] || 540)
             : new window.__TAURI__.window.LogicalSize(440, 56);
           win.setSize(size).catch(function () { /* biarkan CSS yang bekerja */ });
         }
@@ -167,32 +169,47 @@
     applyMode(displayMode === "bar" ? "notch" : "bar", true);
   });
 
-  // ---------- Tab panel ----------
-  document.querySelectorAll(".tab-btn").forEach(function (btn) {
-    btn.addEventListener("click", function () {
-      currentTab = btn.getAttribute("data-tab");
-      document.querySelectorAll(".tab-btn").forEach(function (b) {
-        b.classList.toggle("active", b === btn);
-        b.setAttribute("aria-selected", b === btn ? "true" : "false");
-      });
-      document.querySelectorAll(".tab-panel").forEach(function (panel) {
-        panel.classList.toggle("active", panel.getAttribute("data-panel") === currentTab);
-      });
-      if (notch.classList.contains("expanded")) { setNotchSize(true); }
+  // ---------- Halaman gaya Nusa: panah + titik, satu halaman per fitur ----------
+  function showPage(page) {
+    if (pages.indexOf(page) === -1) { return; }
+    currentPage = page;
+    document.querySelectorAll(".page").forEach(function (el) {
+      el.classList.toggle("active", el.getAttribute("data-page") === page);
     });
+    document.querySelectorAll(".page-dot").forEach(function (d) {
+      d.classList.toggle("active", d.getAttribute("data-page-dot") === page);
+    });
+    var title = $("page-title");
+    if (title) { title.textContent = pageTitles[page] || page; }
+    if (notch.classList.contains("expanded")) { setNotchSize(true); }
+  }
+  function pageStep(dir) {
+    var i = pages.indexOf(currentPage);
+    var next = (i + dir + pages.length) % pages.length;
+    showPage(pages[next]);
+  }
+  $("page-prev").addEventListener("click", function () { pageStep(-1); });
+  $("page-next").addEventListener("click", function () { pageStep(1); });
+  document.querySelectorAll(".page-dot").forEach(function (d) {
+    d.addEventListener("click", function () { showPage(d.getAttribute("data-page-dot")); });
   });
+  showPage("music");
 
-  // ---------- v0.6: menu bar ala MacBook ----------
-  // Klik menu Fokus/Tugas/Lainnya di Bar mode membuka panel ke tab itu.
+  // ---------- v0.6/v0.7: menu bar ala MacBook ----------
   document.querySelectorAll(".bar-menu").forEach(function (btn) {
     btn.addEventListener("click", function () {
-      var tab = btn.getAttribute("data-bar-tab");
-      var tabBtn = document.querySelector('.tab-btn[data-tab="' + tab + '"]');
-      if (tabBtn) { tabBtn.click(); }
+      showPage(btn.getAttribute("data-bar-page"));
       notch.classList.add("expanded");
       setNotchSize(true);
     });
   });
+  var modePanelBtn = $("btn-mode-panel");
+  if (modePanelBtn) {
+    modePanelBtn.addEventListener("click", function () {
+      var modeBtn = $("btn-mode");
+      if (modeBtn) { modeBtn.click(); }
+    });
+  }
 
   // ---------- Jam ----------
   function tickClock() {
@@ -203,6 +220,33 @@
     if (clock) { clock.textContent = hhmm; }
     var barClock = $("bar-clock");
     if (barClock) { barClock.textContent = hhmm; }
+    var notchClock = $("notch-clock");
+    if (notchClock) { notchClock.textContent = hhmm; }
+    var pageDate = $("page-date");
+    if (pageDate) {
+      var days = ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"];
+      var months = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
+      pageDate.textContent = days[now.getDay()] + " " + now.getDate() + " " +
+        months[now.getMonth()] + " " + now.getFullYear() + " " + hhmm;
+    }
+    updateClosedHeader();
+  }
+  function updateClosedHeader() {
+    var nc = $("notch-clock");
+    var mt = $("mini-timer");
+    if (!nc || !mt) { return; }
+    if (document.body.classList.contains("bar-mode")) {
+      nc.style.display = "";
+      mt.style.display = "";
+      return;
+    }
+    if (typeof running !== "undefined" && running) {
+      nc.style.display = "none";
+      mt.style.display = "";
+    } else {
+      nc.style.display = "";
+      mt.style.display = "none";
+    }
   }
   tickClock();
   window.setInterval(tickClock, 1000);
@@ -236,6 +280,7 @@
   function renderTimer() {
     $("timer-display").textContent = formatSeconds(remaining);
     $("mini-timer").textContent = formatSeconds(remaining) + " · " + (mode === "focus" ? "Fokus" : "Istirahat");
+    if (typeof updateClosedHeader === "function") { updateClosedHeader(); }
     $("timer-mode").innerHTML = "Mode: " + (mode === "focus" ? "Fokus" : "Istirahat") +
       " · Sesi selesai: <span id=\"sessions\">" + sessions + "</span>";
     $("btn-switch").textContent = mode === "focus" ? "Ganti ke Istirahat" : "Ganti ke Fokus";
@@ -363,9 +408,50 @@
     $("water-countdown").textContent = formatSeconds(waterLeft);
     $("rest-countdown").textContent = formatSeconds(restLeft);
   }, 1000);
+  function todayKey() {
+    var n = new Date();
+    return n.getFullYear() + "-" + (n.getMonth() + 1) + "-" + n.getDate();
+  }
+  function loadWaterLog() {
+    try {
+      var v = JSON.parse(window.localStorage.getItem("nfp_water_log") || "null");
+      if (v && v.date === todayKey()) { return v; }
+    } catch (e) {}
+    return { date: todayKey(), totalMl: 0, byHour: {} };
+  }
+  function renderWaterToday() {
+    var log = loadWaterLog();
+    var litres = (log.totalMl / 1000).toFixed(1);
+    var pct = Math.min(100, Math.round(log.totalMl / 2000 * 100));
+    var el = $("water-today");
+    if (el) { el.textContent = litres + " / 2.0 L · " + pct + "%"; }
+    var chart = $("water-chart");
+    if (chart) {
+      var hours = Object.keys(log.byHour).sort(function (a, b) { return a - b; });
+      if (!hours.length) {
+        chart.textContent = "Belum ada gelas hari ini.";
+      } else {
+        chart.innerHTML = hours.map(function (h) {
+          var ml = log.byHour[h];
+          var bar = Math.max(4, Math.round(ml / 500 * 40));
+          return "<div class=\"water-bar-row\"><span>" + h + ":00</span><span class=\"water-bar\" style=\"width:" + bar + "px\"></span><span>" + ml + " ml</span></div>";
+        }).join("");
+      }
+    }
+  }
+  function addDrink(ml) {
+    var log = loadWaterLog();
+    log.totalMl += ml;
+    var h = String(new Date().getHours());
+    log.byHour[h] = (log.byHour[h] || 0) + ml;
+    try { window.localStorage.setItem("nfp_water_log", JSON.stringify(log)); } catch (e) {}
+    renderWaterToday();
+  }
+  renderWaterToday();
   $("btn-water-done").addEventListener("click", function () {
     waterLeft = settings.water * 60;
-    showBanner("Pengingat air diulang. Bagus, tetap terhidrasi!");
+    addDrink(250);
+    showBanner("Pengingat air diulang. Bagus, tetap terhidrasi! (+250 ml hari ini)");
   });
   $("btn-rest-done").addEventListener("click", function () {
     restLeft = settings.rest * 60;

@@ -1,21 +1,23 @@
 <!doctype html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Notch Fokus Pelajar</title>
-  <link rel="stylesheet" href="styles.css" />
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Notch Fokus Pelajar</title>
+<link rel="stylesheet" href="styles.css">
 </head>
 <body>
   <main id="notch" class="notch" aria-label="Notch Fokus Pelajar">
-    <!-- Baris notch yang selalu terlihat (mode ciut) -->
+    <!-- Baris notch saat tertutup, gaya Nusa: minimal, hanya titik + jam/timer.
+         Di mode Bar, header ini jadi menu bar MacBook (judul + menu + extras). -->
     <header class="notch-bar" data-tauri-drag-region>
       <span class="notch-dot" aria-hidden="true"></span>
+      <span id="notch-clock" class="notch-clock" aria-live="polite">--:--</span>
       <span class="notch-title">Notch Fokus Pelajar</span>
       <span class="bar-menus" aria-label="Menu bar">
-        <button class="bar-menu" type="button" data-bar-tab="focus">Fokus</button>
-        <button class="bar-menu" type="button" data-bar-tab="todo">Tugas</button>
-        <button class="bar-menu" type="button" data-bar-tab="other">Lainnya</button>
+        <button class="bar-menu" type="button" data-bar-page="focus">Fokus</button>
+        <button class="bar-menu" type="button" data-bar-page="todo">Tugas</button>
+        <button class="bar-menu" type="button" data-bar-page="status">Status</button>
       </span>
       <span id="mini-timer" class="mini-timer" aria-live="polite">25:00 · Fokus</span>
       <span class="bar-extras" aria-label="Status bar">
@@ -28,16 +30,31 @@
       <button id="toggle-panel" type="button" aria-label="Buka atau tutup panel">▾</button>
     </header>
 
-    <!-- Panel yang muncul saat notch membesar: satu tab, satu fokus -->
+    <!-- Panel membesar gaya Nusa: satu halaman per fitur, pindah pakai
+         panah kiri/kanan, titik-titik di bawah menunjukkan halaman aktif. -->
     <section id="panel" class="panel" aria-label="Panel Notch Fokus Pelajar">
       <p id="banner" class="banner hidden" role="status"></p>
-      <nav class="tabs" aria-label="Tab panel">
-        <button class="tab-btn active" type="button" data-tab="focus" aria-selected="true">Fokus</button>
-        <button class="tab-btn" type="button" data-tab="todo" aria-selected="false">Tugas</button>
-        <button class="tab-btn" type="button" data-tab="other" aria-selected="false">Lainnya</button>
-      </nav>
+      <div class="page-nav" aria-label="Navigasi halaman">
+        <button id="page-prev" type="button" aria-label="Halaman sebelumnya">‹</button>
+        <div class="page-head">
+          <strong id="page-title">Musik</strong>
+          <span id="page-date" aria-live="polite"></span>
+        </div>
+        <button id="page-next" type="button" aria-label="Halaman berikutnya">›</button>
+      </div>
 
-      <div class="tab-panel active" data-panel="focus">
+      <div class="page active" data-page="music">
+        <section class="card" aria-labelledby="music-title">
+          <h2 id="music-title">Kontrol Musik</h2>
+          <p id="music-note" class="hint">Mengontrol pemutar yang sedang aktif di Windows (Spotify, YouTube, dll.) lewat tombol media sistem.</p>
+          <div class="row">
+            <button class="music-btn" type="button" data-music="previous">⏮ Sebelumnya</button>
+            <button class="music-btn" type="button" data-music="play-pause">▶ / ⏸ Putar/Jeda</button>
+            <button class="music-btn" type="button" data-music="next">Berikutnya ⏭</button>
+          </div>
+        </section>
+      </div>
+      <div class="page" data-page="focus">
         <section class="card" aria-labelledby="pomodoro-title">
           <h2 id="pomodoro-title">Timer Pomodoro</h2>
           <p id="timer-display" class="timer-display" aria-live="polite">25:00</p>
@@ -58,20 +75,7 @@
           </div>
         </section>
       </div>
-
-      <div class="tab-panel" data-panel="todo">
-        <section class="card" aria-labelledby="todo-title">
-          <h2 id="todo-title">To-do Tugas</h2>
-          <div class="row">
-            <input id="todo-input" type="text" placeholder="Tulis tugas, lalu tekan Tambah…" maxlength="200" />
-            <button id="btn-add-todo" type="button">Tambah</button>
-          </div>
-          <ul id="todo-list" class="todo-list"></ul>
-          <p class="hint">Tersimpan lokal.</p>
-        </section>
-      </div>
-
-      <div class="tab-panel" data-panel="other">
+      <div class="page" data-page="water">
         <section class="card" aria-labelledby="reminder-title">
           <h2 id="reminder-title">Pengingat Air &amp; Istirahat</h2>
           <p>Air: <strong id="water-countdown">—</strong> · Istirahat: <strong id="rest-countdown">—</strong></p>
@@ -89,8 +93,25 @@
             <button id="btn-test-notification" type="button">Uji notifikasi</button>
           </div>
           <p class="hint">Pengingat tampil di aplikasi dan sebagai notifikasi Windows.</p>
+        </section><section class="card" aria-labelledby="water-today-title">
+          <h2 id="water-today-title">Air Hari Ini</h2>
+          <p><strong id="water-today">0.0 / 2.0 L · 0%</strong></p>
+          <div id="water-chart" class="water-chart"></div>
+          <p class="hint">Tiap tombol Sudah minum menambah 250 ml ke total hari ini. Target harian 2.0 L, tersimpan lokal dan reset tiap hari.</p>
         </section>
-
+      </div>
+      <div class="page" data-page="todo">
+        <section class="card" aria-labelledby="todo-title">
+          <h2 id="todo-title">To-do Tugas</h2>
+          <div class="row">
+            <input id="todo-input" type="text" placeholder="Tulis tugas, lalu tekan Tambah…" maxlength="200" />
+            <button id="btn-add-todo" type="button">Tambah</button>
+          </div>
+          <ul id="todo-list" class="todo-list"></ul>
+          <p class="hint">Tersimpan lokal.</p>
+        </section>
+      </div>
+      <div class="page" data-page="shelf">
         <section class="card" aria-labelledby="shelf-title">
           <h2 id="shelf-title">File Shelf</h2>
           <div class="row">
@@ -99,26 +120,29 @@
           </div>
           <ul id="shelf-list" class="shelf-list"></ul>
         </section>
-
-        <section class="card" aria-labelledby="music-title">
-          <h2 id="music-title">Kontrol Musik</h2>
-          <p id="music-note" class="hint">Mengontrol pemutar yang sedang aktif di Windows (Spotify, YouTube, dll.) lewat tombol media sistem.</p>
-          <div class="row">
-            <button class="music-btn" type="button" data-music="previous">⏮ Sebelumnya</button>
-            <button class="music-btn" type="button" data-music="play-pause">▶ / ⏸ Putar/Jeda</button>
-            <button class="music-btn" type="button" data-music="next">Berikutnya ⏭</button>
-          </div>
-        </section>
-
+      </div>
+      <div class="page" data-page="status">
         <section class="card" aria-labelledby="status-title">
           <h2 id="status-title">Status Perangkat</h2>
           <p>Baterai: <strong id="battery-status">Memeriksa…</strong> · Koneksi: <strong id="online-status">Memeriksa…</strong> · Jam: <strong id="clock">--:--</strong></p>
           <p>Wi-Fi: <strong id="wifi-status">Memeriksa…</strong></p>
         </section>
+        <div class="row">
+          <button id="btn-mode-panel" type="button">Ganti ke Mode Bar</button>
+        </div>
+      </div>
+
+      <div class="page-dots" aria-label="Halaman">
+        <button class="page-dot active" type="button" data-page-dot="music" aria-label="Musik"></button>
+        <button class="page-dot" type="button" data-page-dot="focus" aria-label="Pomodoro"></button>
+        <button class="page-dot" type="button" data-page-dot="water" aria-label="Air"></button>
+        <button class="page-dot" type="button" data-page-dot="todo" aria-label="Tugas"></button>
+        <button class="page-dot" type="button" data-page-dot="shelf" aria-label="Shelf"></button>
+        <button class="page-dot" type="button" data-page-dot="status" aria-label="Status"></button>
       </div>
 
       <footer class="footer">
-        <p>Notch Fokus Pelajar v0.6.0 — lokal, tanpa akun. Tombol Bar di header mengganti ke bar atas permanen.</p>
+        <p>Notch Fokus Pelajar v0.7.0 — lokal, tanpa akun.</p>
       </footer>
     </section>
   </main>
