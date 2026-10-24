@@ -228,6 +228,7 @@
         setNotchSize(true);
       }
     });
+    window.__TAURI__.event.listen("nfp-tray-dock-toggle", function () { applyDock(!dockVisible); });
     window.__TAURI__.event.listen("nfp-dock-hidden", function () {
       dockVisible = false;
       try { window.localStorage.setItem("nfp_dock", "off"); } catch (e) {}

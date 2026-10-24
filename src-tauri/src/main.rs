@@ -369,6 +369,71 @@ fn main() {
             brightness_level
         ])
         .setup(|app| {
+            use tauri::{Emitter, Manager};
+            // Paksa semua jendela tidak muncul di taskbar (konfigurasi saja
+            // ternyata tidak cukup di PC pengguna — ikon aplikasi tetap
+            // tampil sebagai tombol taskbar). Aplikasi hanya hidup di tray.
+            for label in ["main", "dock", "overlay"] {
+                if let Some(w) = app.get_webview_window(label) {
+                    let _ = w.set_skip_taskbar(true);
+                }
+            }
+            // Ikon tray di pojok kanan bawah, gaya Nusa: klik kiri
+            // menampilkan/menyembunyikan notch, klik kanan membuka menu.
+            if let Some(icon) = app.default_window_icon().cloned() {
+                use tauri::{
+                    menu::MenuBuilder,
+                    tray::{MouseButton, TrayIconBuilder, TrayIconEvent},
+                };
+                let menu = MenuBuilder::new(app)
+                    .text("toggle_notch", "Tampilkan/Sembunyikan Notch")
+                    .text("toggle_dock", "Aktifkan/Nonaktifkan Dock")
+                    .separator()
+                    .text("quit", "Keluar")
+                    .build();
+                if let Ok(menu) = menu {
+                    let _ = TrayIconBuilder::with_id("tray")
+                        .icon(icon)
+                        .menu(&menu)
+                        .show_menu_on_left_click(false)
+                        .on_menu_event(|app, event| match event.id().as_ref() {
+                            "quit" => {
+                                let _ = set_taskbar_visible(true);
+                                app.exit(0);
+                            }
+                            "toggle_dock" => {
+                                let _ = app.emit("nfp-tray-dock-toggle", ());
+                            }
+                            "toggle_notch" => {
+                                if let Some(w) = app.get_webview_window("main") {
+                                    if w.is_visible().unwrap_or(true) {
+                                        let _ = w.hide();
+                                    } else {
+                                        let _ = w.show();
+                                    }
+                                }
+                            }
+                            _ => {}
+                        })
+                        .on_tray_icon_event(|tray, event| {
+                            if let TrayIconEvent::Click {
+                                button: MouseButton::Left,
+                                ..
+                            } = event
+                            {
+                                let app = tray.app_handle();
+                                if let Some(w) = app.get_webview_window("main") {
+                                    if w.is_visible().unwrap_or(true) {
+                                        let _ = w.hide();
+                                    } else {
+                                        let _ = w.show();
+                                    }
+                                }
+                            }
+                        })
+                        .build(app);
+                }
+            }
             // Posisikan jendela di atas-tengah layar utama.
             // Kalau monitor tidak terbaca, biarkan posisi default Tauri.
             // Posisikan Dock di bawah-tengah layar (di atas taskbar, perkiraan 48px).
