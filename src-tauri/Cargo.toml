@@ -1,6 +1,6 @@
 [package]
 name = "notch-fokus-pelajar"
-version = "0.3.0"
+version = "0.4.0"
 description = "Notch Fokus Pelajar — notch ringan di atas layar Windows untuk pelajar"
 authors = ["Notch Fokus Pelajar"]
 edition = "2021"
@@ -14,6 +14,9 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 tauri-plugin-dialog = "2"
 tauri-plugin-opener = "2"
+tauri-plugin-notification = "2"
+[target.'cfg(windows)'.dependencies]
+winapi = { version = "0.3", features = ["winuser", "wlanapi"] }
 
 [profile.release]
 lto = true
