@@ -96,15 +96,17 @@ async fn media_info() -> Result<MediaInfo, String> {
         GlobalSystemMediaTransportControlsSessionManager,
         GlobalSystemMediaTransportControlsSessionPlaybackStatus,
     };
+    // windows 0.58: IAsyncOperation BUKAN future (tidak bisa .await).
+    // Pakai .get() yang menunggu sampai selesai (panggilan lokal, cepat).
     let manager = GlobalSystemMediaTransportControlsSessionManager::RequestAsync()
         .map_err(|e| e.to_string())?
-        .await
+        .get()
         .map_err(|e| e.to_string())?;
     let session = manager.GetCurrentSession().map_err(|e| e.to_string())?;
     let props = session
         .TryGetMediaPropertiesAsync()
         .map_err(|e| e.to_string())?
-        .await
+        .get()
         .map_err(|e| e.to_string())?;
     let timeline = session.GetTimelineProperties().map_err(|e| e.to_string())?;
     let playback = session.GetPlaybackInfo().map_err(|e| e.to_string())?;
