@@ -96,14 +96,36 @@
     } catch (e) { /* jatuh ke fallback */ }
     callback((window.screen && window.screen.width) || 1920);
   }
+  // v0.13: tinggi panel mengikuti isi — tiap halaman kecil dan seimbang,
+  // tanpa ruang kosong berlebih. Menggantikan tabel pageHeights yang
+  // membuat halaman berlebih tinggi (mis. Shelf) atau terasa jumbo.
+  // pageHeights tinggal jadi fallback bila panel tidak terukur.
+  function expandedHeight() {
+    try {
+      var panel = $("panel");
+      var headerH = displayMode === "bar" ? 32 : 56;
+      if (panel) {
+        var h = panel.scrollHeight;
+        if (h && h > 0) { return headerH + h + 2; }
+      }
+    } catch (e) {}
+    return pageHeights[currentPage] || 540;
+  }
   function setNotchSize(expanded) {
     var win = tauriWindow();
+    var n = $("notch");
+    if (expanded) {
+      var eh = expandedHeight();
+      if (n) { n.style.height = eh + "px"; }
+    } else {
+      if (n) { n.style.height = ""; }
+    }
     if (win && win.setSize) {
       try {
         if (displayMode === "bar") {
           monitorLogicalWidth(function (w) {
             try {
-              var h = expanded ? (pageHeights[currentPage] || 540) : 32;
+              var h = expanded ? expandedHeight() : 32;
               win.setSize(new window.__TAURI__.window.LogicalSize(w, h)).catch(function () { /* biarkan CSS yang bekerja */ });
               if (win.setPosition) {
                 win.setPosition(new window.__TAURI__.window.LogicalPosition(0, 0)).catch(function () {});
@@ -112,7 +134,7 @@
           });
         } else {
           var size = expanded
-            ? new window.__TAURI__.window.LogicalSize(440, pageHeights[currentPage] || 540)
+            ? new window.__TAURI__.window.LogicalSize(440, expandedHeight())
             : new window.__TAURI__.window.LogicalSize(440, 56);
           win.setSize(size).catch(function () { /* biarkan CSS yang bekerja */ });
         }
@@ -194,6 +216,24 @@
     d.addEventListener("click", function () { showPage(d.getAttribute("data-page-dot")); });
   });
   showPage("music");
+  // Isi panel berubah (tambah/hapus tugas atau file Shelf) -> tinggi panel
+  // dipas-kan ulang supaya tetap kecil dan seimbang.
+  (function () {
+    try {
+      var panelEl = $("panel");
+      var refitTimer = null;
+      if (panelEl && window.MutationObserver) {
+        var obs = new MutationObserver(function () {
+          if (refitTimer) { clearTimeout(refitTimer); }
+          refitTimer = setTimeout(function () {
+            var n = $("notch");
+            if (n && n.classList.contains("expanded")) { setNotchSize(true); }
+          }, 120);
+        });
+        obs.observe(panelEl, { childList: true, subtree: true, characterData: true });
+      }
+    } catch (e) {}
+  })();
 
   // ---------- v0.8: Dock bawah ala MacBook (bisa dimatikan) ----------
   var dockVisible = true;
@@ -302,32 +342,45 @@
     var timer = $("mini-timer"); if (timer) { timer.style.display = mode === "normal" ? "" : "none"; }
     var mini = $("level-mini"); if (mini) { mini.classList.toggle("on", mode === "level"); }
     var lyric = $("lyric-line"); if (lyric) { lyric.classList.toggle("on", mode === "lyrics"); }
+    var charger = $("charger-mini"); if (charger) { charger.classList.toggle("on", mode === "charger"); }
   }
-  var showingLevel = false, levelWasIdle = false, levelTimer = null;
+  // Tampilan sementara di tengah bar atas: level (2,5 detik) atau charger
+  // (3 detik). Yang terakhir tampil menang; setelah habis, kembali ke
+  // lirik (bila lagu ber-lirik sedang diputar) atau ke bar normal.
+  var transientKind = null, transientWasIdle = false, transientTimer = null;
+  function showTransient(kind, ms) {
+    if (!transientKind) {
+      transientWasIdle = document.body.classList.contains("notch-idle");
+      if (transientWasIdle) {
+        document.body.classList.remove("notch-idle");
+        setNotchSize(false);
+      }
+    }
+    transientKind = kind;
+    setBarCenter(kind);
+    if (transientTimer) { clearTimeout(transientTimer); }
+    transientTimer = setTimeout(endTransient, ms);
+  }
+  function endTransient() {
+    transientKind = null;
+    transientTimer = null;
+    if (typeof currentLyricText !== "undefined" && currentLyricText) { setBarCenter("lyrics"); }
+    else { setBarCenter("normal"); }
+    if (transientWasIdle) { goIdle(); }
+  }
   function showLevel(kind, pct) {
     var mini = $("level-mini");
     if (!mini) { return; }
     $("level-icon").textContent = kind === "brightness" ? "☀" : "🔊";
     $("level-fill").style.width = pct + "%";
     $("level-pct").textContent = pct + "%";
-    if (!showingLevel) {
-      levelWasIdle = document.body.classList.contains("notch-idle");
-      showingLevel = true;
-      if (levelWasIdle) {
-        document.body.classList.remove("notch-idle");
-        setNotchSize(false);
-      }
-      setBarCenter("level");
-    }
-    if (levelTimer) { clearTimeout(levelTimer); }
-    levelTimer = setTimeout(hideLevel, 2500);
+    showTransient("level", 2500);
   }
-  function hideLevel() {
-    showingLevel = false;
-    levelTimer = null;
-    if (currentLyricText) { setBarCenter("lyrics"); }
-    else { setBarCenter("normal"); }
-    if (levelWasIdle) { goIdle(); }
+  function showCharger(connected, pct) {
+    var el = $("charger-mini");
+    if (!el) { return; }
+    el.textContent = connected ? ("⚡ Charger terhubung • " + pct + "%") : ("🔌 Charger dilepas • " + pct + "%");
+    showTransient("charger", 3000);
   }
 
   // ---------- v0.12: polling level sistem (tampil di bar atas) ----------
@@ -362,7 +415,7 @@
     var key = title + "\n" + artist;
     if (key === lyricTrackKey) { return; }
     lyricTrackKey = key; lyricLines = []; currentLyricText = "";
-    if (!title) { if (!showingLevel) { setBarCenter("normal"); } return; }
+    if (!title) { if (!transientKind) { setBarCenter("normal"); } return; }
     var url = "https://lrclib.net/api/get?artist_name=" + encodeURIComponent(artist || "") +
       "&track_name=" + encodeURIComponent(title);
     fetch(url).then(function (r) {
@@ -383,7 +436,7 @@
     if (!lyricLines.length) {
       if (currentLyricText) {
         currentLyricText = "";
-        if (!showingLevel) { setBarCenter("normal"); }
+        if (!transientKind) { setBarCenter("normal"); }
       }
       return;
     }
@@ -396,10 +449,10 @@
     if (text && text !== currentLyricText) {
       currentLyricText = text;
       $("lyric-line").textContent = text;
-      if (!showingLevel) { setBarCenter("lyrics"); }
+      if (!transientKind) { setBarCenter("lyrics"); }
     } else if (!text && currentLyricText) {
       currentLyricText = "";
-      if (!showingLevel) { setBarCenter("normal"); }
+      if (!transientKind) { setBarCenter("normal"); }
     }
   }
   setInterval(function () {
@@ -838,6 +891,7 @@
         $("battery-status").textContent = pct + "%" + (battery.charging ? " (mengisi daya)" : "");
         // v0.9: beri tahu saat charger dicolok/dilepas (bukan saat pertama baca).
         if (typeof window.__nfpPrevCharging === "boolean" && window.__nfpPrevCharging !== battery.charging) {
+          showCharger(battery.charging, pct);
           tauriInvoke("send_notification", {
             title: "Pengisi daya",
             body: battery.charging ? ("Pengisi daya terhubung \u2014 baterai " + pct + "%") : ("Pengisi daya dilepas \u2014 baterai " + pct + "%")
