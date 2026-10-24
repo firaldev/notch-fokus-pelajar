@@ -164,3 +164,31 @@ input[type="number"] { width: 76px; }
 .todo-list li span, .shelf-list li span { flex: 1; }
 .hint { color: #a1a1aa; font-size: 13px; }
 .footer { color: #a1a1aa; font-size: 12px; text-align: center; }
+
+/* v0.6 Bar Apps ala MacBook: di Bar mode, header jadi menu bar sungguhan.
+   Kiri: nama aplikasi + menu Fokus/Tugas/Lainnya (klik = buka panel ke tab itu).
+   Kanan: menu extras ala macOS — tombol musik, Wi-Fi, baterai, jam.
+   Di mode Notch, semua ini disembunyikan supaya pil tetap ringkas. */
+.bar-menus, .bar-extras { display: none; }
+body.bar-mode .bar-menus { display: flex; gap: 4px; }
+body.bar-mode .bar-extras {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+.bar-menu {
+  background: transparent;
+  border: none;
+  font-size: 12px;
+  padding: 2px 6px;
+}
+.bar-menu:hover { background: #3f3f46; }
+.bar-btn {
+  background: transparent;
+  border: none;
+  font-size: 13px;
+  padding: 2px 4px;
+}
+.bar-btn:hover { background: #3f3f46; }

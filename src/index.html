@@ -12,7 +12,18 @@
     <header class="notch-bar" data-tauri-drag-region>
       <span class="notch-dot" aria-hidden="true"></span>
       <span class="notch-title">Notch Fokus Pelajar</span>
+      <span class="bar-menus" aria-label="Menu bar">
+        <button class="bar-menu" type="button" data-bar-tab="focus">Fokus</button>
+        <button class="bar-menu" type="button" data-bar-tab="todo">Tugas</button>
+        <button class="bar-menu" type="button" data-bar-tab="other">Lainnya</button>
+      </span>
       <span id="mini-timer" class="mini-timer" aria-live="polite">25:00 · Fokus</span>
+      <span class="bar-extras" aria-label="Status bar">
+        <button class="music-btn bar-btn" type="button" data-music="play-pause" aria-label="Putar atau jeda musik">⏯</button>
+        <span id="bar-wifi">Wi-Fi —</span>
+        <span id="bar-battery">Baterai —</span>
+        <span id="bar-clock">--:--</span>
+      </span>
       <button id="btn-mode" type="button" aria-label="Ganti mode tampilan antara Notch dan Bar atas">Bar</button>
       <button id="toggle-panel" type="button" aria-label="Buka atau tutup panel">▾</button>
     </header>
@@ -107,7 +118,7 @@
       </div>
 
       <footer class="footer">
-        <p>Notch Fokus Pelajar v0.5.0 — lokal, tanpa akun. Tombol Bar di header mengganti ke bar atas permanen.</p>
+        <p>Notch Fokus Pelajar v0.6.0 — lokal, tanpa akun. Tombol Bar di header mengganti ke bar atas permanen.</p>
       </footer>
     </section>
   </main>

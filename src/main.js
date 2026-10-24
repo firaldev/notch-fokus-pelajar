@@ -182,14 +182,27 @@
     });
   });
 
+  // ---------- v0.6: menu bar ala MacBook ----------
+  // Klik menu Fokus/Tugas/Lainnya di Bar mode membuka panel ke tab itu.
+  document.querySelectorAll(".bar-menu").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var tab = btn.getAttribute("data-bar-tab");
+      var tabBtn = document.querySelector('.tab-btn[data-tab="' + tab + '"]');
+      if (tabBtn) { tabBtn.click(); }
+      notch.classList.add("expanded");
+      setNotchSize(true);
+    });
+  });
+
   // ---------- Jam ----------
   function tickClock() {
     var now = new Date();
+    var hhmm = String(now.getHours()).padStart(2, "0") + ":" +
+      String(now.getMinutes()).padStart(2, "0");
     var clock = $("clock");
-    if (clock) {
-      clock.textContent = String(now.getHours()).padStart(2, "0") + ":" +
-        String(now.getMinutes()).padStart(2, "0");
-    }
+    if (clock) { clock.textContent = hhmm; }
+    var barClock = $("bar-clock");
+    if (barClock) { barClock.textContent = hhmm; }
   }
   tickClock();
   window.setInterval(tickClock, 1000);
@@ -462,12 +475,15 @@
     var el = $("wifi-status");
     if (!el) { return; }
     tauriInvoke("wifi_status").then(function (result) {
+      var barWifi = $("bar-wifi");
       if (result && result.connected) {
-        el.textContent = (result.ssid || "Terhubung") + " (" +
-          (result.signal_percent !== null && result.signal_percent !== undefined
-            ? result.signal_percent + "%" : "—") + ")";
+        var sig = (result.signal_percent !== null && result.signal_percent !== undefined
+          ? result.signal_percent + "%" : "—");
+        el.textContent = (result.ssid || "Terhubung") + " (" + sig + ")";
+        if (barWifi) { barWifi.textContent = "Wi-Fi " + (result.ssid || "") + " " + sig; }
       } else if (result) {
         el.textContent = "Tidak terhubung / tanpa Wi-Fi";
+        if (barWifi) { barWifi.textContent = "Wi-Fi —"; }
       } else {
         el.textContent = "Hanya di aplikasi Windows.";
       }
@@ -483,6 +499,8 @@
       function renderBattery() {
         var pct = Math.round(battery.level * 100);
         $("battery-status").textContent = pct + "%" + (battery.charging ? " (mengisi daya)" : "");
+        var barBattery = $("bar-battery");
+        if (barBattery) { barBattery.textContent = "Baterai " + pct + "%" + (battery.charging ? " ⚡" : ""); }
       }
       renderBattery();
       battery.addEventListener("levelchange", renderBattery);
