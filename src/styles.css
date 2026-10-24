@@ -69,6 +69,16 @@ body.notch-idle .panel { display: none; }
 .level-mini .level-fill { display: block; height: 100%; background: #f2f2f2; width: 50%; }
 .level-mini .level-pct { font-size: 13px; color: #f2f2f2; font-variant-numeric: tabular-nums; }
 
+/* v0.13: satu baris lirik tersinkron di bar atas — otomatis saat lagu
+   diputar, menggantikan popup lirik terpisah. */
+.lyric-line { display: none; flex: 1; min-width: 0; text-align: center; font-size: 14px; color: #f2f2f2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lyric-line.on { display: block; }
+
+/* v0.13: tanpa garis scrollbar di mana pun (gaya bersih ala halaman
+   Water Reminder) — daftar tetap bisa di-scroll pakai roda mouse. */
+* { scrollbar-width: none; }
+*::-webkit-scrollbar { display: none; }
+
 .notch-bar {
   display: flex;
   align-items: center;

@@ -21,7 +21,6 @@
   "windows": [
     "main",
     "dock",
-    "overlay",
-    "lyrics"
+    "overlay"
   ]
 }

@@ -347,19 +347,6 @@ async fn wifi_status() -> WifiStatus {
     wifi_status_impl()
 }
 
-#[tauri::command]
-fn show_lyrics(app: tauri::AppHandle, title: String, artist: String) {
-    use tauri::{Emitter, Manager};
-    if let Some(w) = app.get_webview_window("lyrics") {
-        let _ = w.show();
-        let _ = w.set_focus();
-        let _ = app.emit(
-            "nfp-lyrics-track",
-            serde_json::json!({ "title": title, "artist": artist }),
-        );
-    }
-}
-
 fn main() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
@@ -379,7 +366,6 @@ fn main() {
             set_dock_visible,
             set_taskbar_visible,
             show_overlay,
-            show_lyrics,
             volume_level,
             media_info,
             brightness_level
@@ -389,7 +375,7 @@ fn main() {
             // Paksa semua jendela tidak muncul di taskbar (konfigurasi saja
             // ternyata tidak cukup di PC pengguna — ikon aplikasi tetap
             // tampil sebagai tombol taskbar). Aplikasi hanya hidup di tray.
-            for label in ["main", "dock", "overlay", "lyrics"] {
+            for label in ["main", "dock", "overlay"] {
                 if let Some(w) = app.get_webview_window(label) {
                     let _ = w.set_skip_taskbar(true);
                 }

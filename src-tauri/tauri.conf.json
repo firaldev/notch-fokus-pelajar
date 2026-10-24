@@ -1,1 +1,74 @@
-{"$schema": "https://schema.tauri.app/config/2", "app": {"security": {"csp": null}, "windows": [{"alwaysOnTop": true, "decorations": false, "height": 56, "label": "main", "minHeight": 6, "minWidth": 200, "resizable": false, "skipTaskbar": true, "title": "Notch Fokus Pelajar", "transparent": true, "visible": true, "width": 440}, {"alwaysOnTop": true, "decorations": false, "height": 76, "label": "dock", "minHeight": 40, "minWidth": 200, "resizable": false, "skipTaskbar": true, "title": "Dock", "transparent": true, "url": "dock.html", "visible": true, "width": 560}, {"alwaysOnTop": true, "decorations": false, "height": 240, "label": "overlay", "minHeight": 240, "minWidth": 80, "resizable": false, "skipTaskbar": true, "title": "Overlay", "transparent": true, "url": "overlay.html", "visible": false, "width": 80}, {"alwaysOnTop": true, "decorations": false, "height": 520, "label": "lyrics", "minHeight": 240, "minWidth": 280, "resizable": true, "skipTaskbar": true, "title": "Lirik", "transparent": true, "url": "lyrics.html", "visible": false, "width": 380}], "withGlobalTauri": true}, "build": {"beforeBuildCommand": "", "beforeDevCommand": "", "frontendDist": "../src"}, "bundle": {"active": true, "category": "Productivity", "icon": ["icons/32x32.png", "icons/128x128.png", "icons/icon.png", "icons/icon.ico"], "targets": "all"}, "identifier": "id.notchfokuspelajar.app", "productName": "Notch Fokus Pelajar", "version": "0.12.0"}
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "app": {
+    "security": {
+      "csp": null
+    },
+    "windows": [
+      {
+        "alwaysOnTop": true,
+        "decorations": false,
+        "height": 56,
+        "label": "main",
+        "minHeight": 6,
+        "minWidth": 200,
+        "resizable": false,
+        "skipTaskbar": true,
+        "title": "Notch Fokus Pelajar",
+        "transparent": true,
+        "visible": true,
+        "width": 440
+      },
+      {
+        "alwaysOnTop": true,
+        "decorations": false,
+        "height": 76,
+        "label": "dock",
+        "minHeight": 40,
+        "minWidth": 200,
+        "resizable": false,
+        "skipTaskbar": true,
+        "title": "Dock",
+        "transparent": true,
+        "url": "dock.html",
+        "visible": true,
+        "width": 560
+      },
+      {
+        "alwaysOnTop": true,
+        "decorations": false,
+        "height": 240,
+        "label": "overlay",
+        "minHeight": 240,
+        "minWidth": 80,
+        "resizable": false,
+        "skipTaskbar": true,
+        "title": "Overlay",
+        "transparent": true,
+        "url": "overlay.html",
+        "visible": false,
+        "width": 80
+      }
+    ],
+    "withGlobalTauri": true
+  },
+  "build": {
+    "beforeBuildCommand": "",
+    "beforeDevCommand": "",
+    "frontendDist": "../src"
+  },
+  "bundle": {
+    "active": true,
+    "category": "Productivity",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/icon.png",
+      "icons/icon.ico"
+    ],
+    "targets": "all"
+  },
+  "identifier": "id.notchfokuspelajar.app",
+  "productName": "Notch Fokus Pelajar",
+  "version": "0.13.0"
+}
