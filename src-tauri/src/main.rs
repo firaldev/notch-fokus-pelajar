@@ -85,10 +85,11 @@ fn show_overlay(app: tauri::AppHandle, kind: String, value: f64) -> Result<(), S
 fn volume_level() -> Result<f32, String> {
     #[cfg(target_os = "windows")]
     unsafe {
-        use winapi::um::mmdeviceapi::{eConsole, eRender, CLSID_MMDeviceEnumerator, IID_IMMDeviceEnumerator, IMMDevice, IMMDeviceEnumerator};
-        use winapi::um::endpointvolume::{IAudioEndpointVolume, IID_IAudioEndpointVolume};
+        use winapi::um::mmdeviceapi::{eConsole, eRender, CLSID_MMDeviceEnumerator, IMMDevice, IMMDeviceEnumerator};
+        use winapi::um::endpointvolume::IAudioEndpointVolume;
         use winapi::um::combaseapi::{CoCreateInstance, CoInitializeEx, CLSCTX_ALL};
         use winapi::um::objbase::COINIT_APARTMENTTHREADED;
+        use winapi::Interface;
         use std::ptr::null_mut;
         // Sengaja tanpa CoUninitialize: COM mungkin sudah diinisialisasi Tauri,
         // dan CoUninitialize yang tidak berpasangan bisa mematikan COM-nya.
@@ -98,8 +99,8 @@ fn volume_level() -> Result<f32, String> {
             &CLSID_MMDeviceEnumerator,
             null_mut(),
             CLSCTX_ALL,
-            &IID_IMMDeviceEnumerator,
-            &mut enumerator as *mut *mut IMMDeviceEnumerator as *mut *mut std::ffi::c_void,
+            &IMMDeviceEnumerator::uuidof(),
+            &mut enumerator as *mut *mut IMMDeviceEnumerator as *mut *mut winapi::ctypes::c_void,
         );
         if hr != 0 || enumerator.is_null() {
             return Err(format!("enumerator gagal: {:#x}", hr as u32));
@@ -112,10 +113,10 @@ fn volume_level() -> Result<f32, String> {
         }
         let mut vol: *mut IAudioEndpointVolume = null_mut();
         let hr = (*device).Activate(
-            &IID_IAudioEndpointVolume,
+            &IAudioEndpointVolume::uuidof(),
             CLSCTX_ALL,
             null_mut(),
-            &mut vol as *mut *mut IAudioEndpointVolume as *mut *mut std::ffi::c_void,
+            &mut vol as *mut *mut IAudioEndpointVolume as *mut *mut winapi::ctypes::c_void,
         );
         (*device).Release();
         if hr != 0 || vol.is_null() {
