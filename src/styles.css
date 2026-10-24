@@ -49,6 +49,29 @@ body {
   padding: 0 14px;
 }
 
+/* v0.3 Bar mode: bar atas permanen ala menu bar macOS, full-width,
+   tinggi 32px saat ciut. Panel tetap 440px dan terpusat di bawah bar
+   saat membesar, jadi panel tidak ikut melebar penuh. */
+body.bar-mode { padding-top: 0; }
+.notch.bar-mode {
+  width: 100vw;
+  max-width: none;
+  border-radius: 0;
+  border-left: none;
+  border-right: none;
+  border-top: none;
+  height: 32px;
+}
+.notch.bar-mode .notch-bar { height: 32px; padding: 0 12px; }
+.notch.bar-mode:hover,
+.notch.bar-mode.expanded {
+  height: 540px;
+  border-radius: 0;
+  overflow: hidden;
+}
+.notch.bar-mode .panel { width: 440px; margin: 0 auto; }
+#btn-mode { background: transparent; font-size: 12px; padding: 4px 8px; white-space: nowrap; }
+
 .notch-dot {
   width: 10px;
   height: 10px;
