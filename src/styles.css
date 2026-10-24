@@ -74,6 +74,9 @@ body.notch-idle .panel { display: none; }
 .lyric-line { display: none; flex: 1; min-width: 0; text-align: center; font-size: 14px; color: #f2f2f2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .lyric-line.on { display: block; }
 
+/* v0.14: sorotan saat file/aplikasi diseret ke atas Shelf. */
+.card.drop-active { outline: 2px dashed #8b8cf8; outline-offset: -2px; background: #26262e; }
+
 /* v0.13: bar charger colok/lepas di bar atas (ala pil Nusa) — menggantikan
    toast Windows yang ternyata tidak muncul di PC pengguna. */
 .charger-mini { display: none; flex: 1; min-width: 0; text-align: center; font-size: 14px; color: #f2f2f2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -224,7 +227,7 @@ input[type="number"] { width: 76px; }
 .todo-list li.done span { text-decoration: line-through; color: #a1a1aa; }
 .todo-list li span, .shelf-list li span { flex: 1; }
 .hint { color: #a1a1aa; font-size: 13px; }
-.footer { color: #a1a1aa; font-size: 12px; text-align: center; }
+
 
 /* v0.6 Bar Apps ala MacBook: di Bar mode, header jadi menu bar sungguhan.
    Kiri: nama aplikasi + menu Fokus/Tugas/Lainnya (klik = buka panel ke tab itu).

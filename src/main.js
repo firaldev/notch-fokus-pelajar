@@ -507,14 +507,6 @@
       setNotchSize(true);
     });
   });
-  var modePanelBtn = $("btn-mode-panel");
-  if (modePanelBtn) {
-    modePanelBtn.addEventListener("click", function () {
-      var modeBtn = $("btn-mode");
-      if (modeBtn) { modeBtn.click(); }
-    });
-  }
-
   // ---------- Jam ----------
   function tickClock() {
     var now = new Date();
@@ -773,7 +765,7 @@
     list.innerHTML = "";
     if (shelf.length === 0) {
       var empty = document.createElement("li");
-      empty.textContent = "Shelf masih kosong. Tambahkan file yang sering kamu buka.";
+      empty.textContent = "Shelf masih kosong. Seret file atau aplikasi ke sini, atau pakai tombol Tambah file…";
       list.appendChild(empty);
       return;
     }
@@ -833,6 +825,57 @@
     e.target.value = "";
   });
   renderShelf();
+
+  // ---------- v0.14: Shelf bisa di-drop file & aplikasi ----------
+  // Seret dari File Explorer ke kartu Shelf saat halaman Shelf terbuka:
+  // path asli dari event drag-drop Tauri disimpan, jadi tombol Buka
+  // benar-benar membuka file/aplikasi itu (lewat opener bawaan Tauri).
+  function addShelfPath(path) {
+    if (typeof path !== "string" || !path) { return; }
+    if (shelf.some(function (it) { return it.path === path; })) { return; } // cegah dobel
+    var name = path.split(/[\\/]/).pop() || path;
+    shelf.push({ name: name, path: path });
+    save("nfp_shelf", shelf);
+    renderShelf();
+  }
+  var tauriDropSupported = false;
+  try {
+    if (window.__TAURI__ && window.__TAURI__.event && window.__TAURI__.event.listen) {
+      window.__TAURI__.event.listen("tauri://drag-drop", function (e) {
+        var paths = e && e.payload && e.payload.paths;
+        if (!paths || !paths.length) { return; }
+        if (currentPage !== "shelf") { return; }
+        if (!notch.classList.contains("expanded")) { return; }
+        paths.forEach(addShelfPath);
+        showBanner(paths.length === 1 ? "Ditambahkan ke Shelf." : (paths.length + " file ditambahkan ke Shelf."));
+      }).then(function () { tauriDropSupported = true; }).catch(function () {});
+    }
+  } catch (e) { /* bukan Tauri: pakai fallback DOM di bawah */ }
+  var shelfCard = $("shelf-card");
+  if (shelfCard) {
+    shelfCard.addEventListener("dragover", function (e) {
+      if (currentPage !== "shelf") { return; }
+      e.preventDefault();
+      shelfCard.classList.add("drop-active");
+    });
+    shelfCard.addEventListener("dragleave", function () {
+      shelfCard.classList.remove("drop-active");
+    });
+    shelfCard.addEventListener("drop", function (e) {
+      e.preventDefault();
+      shelfCard.classList.remove("drop-active");
+      if (currentPage !== "shelf") { return; }
+      if (tauriDropSupported) { return; } // event Tauri yang menambahkan (dengan path asli)
+      var files = e.dataTransfer && e.dataTransfer.files;
+      if (!files || !files.length) { return; }
+      Array.prototype.forEach.call(files, function (file) {
+        // Browser tidak memberi path asli; yang tersimpan hanya nama.
+        shelf.push({ name: file.name, path: "" });
+      });
+      save("nfp_shelf", shelf);
+      renderShelf();
+    });
+  }
 
   // ---------- Kontrol musik v0.4: tombol media sistem Windows ----------
   // Tombol ini mengirim media key ke Windows, sehingga pemutar yang
