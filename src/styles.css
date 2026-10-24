@@ -1,0 +1,119 @@
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  color: #f2f2f2;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  font-size: 14px;
+}
+
+/* Di pratinjau web, notch ditampilkan di tengah atas halaman.
+   Di aplikasi Tauri, jendela transparan-lah yang diposisikan atas-tengah
+   oleh Rust (lihat src-tauri/src/main.rs). */
+body {
+  display: flex;
+  justify-content: center;
+  padding-top: 8px;
+  min-height: 100vh;
+}
+
+.notch {
+  width: 440px;
+  max-width: calc(100vw - 16px);
+  height: 56px;
+  overflow: hidden;
+  background: #0b0b0f;
+  border: 1px solid #2a2a35;
+  border-radius: 28px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.45);
+  transition: height 0.25s ease, border-radius 0.25s ease;
+}
+
+/* Fallback pratinjau web: hover / kelas expanded membesarkan notch.
+   Di Tauri, JavaScript juga mencoba mengubah ukuran jendela lewat API. */
+.notch:hover,
+.notch.expanded {
+  height: 640px;
+  border-radius: 20px;
+  overflow-y: auto;
+}
+
+.notch-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 56px;
+  padding: 0 14px;
+}
+
+.notch-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #4ade80;
+  flex-shrink: 0;
+}
+
+.notch-title { font-weight: 700; white-space: nowrap; }
+.mini-timer { color: #facc15; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.clock { margin-left: auto; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.mini-status { color: #a1a1aa; white-space: nowrap; }
+
+button {
+  cursor: pointer;
+  border: 1px solid #3f3f46;
+  border-radius: 10px;
+  background: #27272a;
+  color: #f2f2f2;
+  padding: 7px 11px;
+}
+
+button:hover { background: #3f3f46; }
+button:focus-visible, input:focus-visible { outline: 2px solid #facc15; outline-offset: 2px; }
+
+#toggle-panel { background: transparent; border: none; font-size: 16px; padding: 4px 6px; }
+
+.panel { padding: 4px 14px 14px; }
+.banner { background: #3f6212; border: 1px solid #65a30d; border-radius: 10px; padding: 10px; }
+.hidden { display: none !important; }
+.privacy-note { color: #a1a1aa; font-size: 13px; }
+
+.card {
+  background: #18181b;
+  border: 1px solid #27272a;
+  border-radius: 14px;
+  padding: 12px;
+  margin: 10px 0;
+}
+
+.card h2 { margin: 0 0 8px; font-size: 15px; }
+.timer-display { font-size: 40px; font-weight: 800; margin: 4px 0; font-variant-numeric: tabular-nums; }
+.row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin: 8px 0; }
+.settings-row label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: #d4d4d8; }
+
+input[type="text"], input[type="number"] {
+  background: #0b0b0f;
+  border: 1px solid #3f3f46;
+  border-radius: 10px;
+  color: #f2f2f2;
+  padding: 8px 10px;
+  min-width: 0;
+}
+
+#todo-input { flex: 1; }
+.todo-list, .shelf-list { list-style: none; margin: 8px 0 0; padding: 0; }
+.todo-list li, .shelf-list li {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 7px 0;
+  border-top: 1px solid #27272a;
+  overflow-wrap: anywhere;
+}
+.todo-list li.done span { text-decoration: line-through; color: #a1a1aa; }
+.todo-list li span, .shelf-list li span { flex: 1; }
+.hint { color: #a1a1aa; font-size: 13px; }
+.placeholder-warning { background: #422006; border: 1px solid #b45309; border-radius: 10px; padding: 10px; }
+.footer { color: #a1a1aa; font-size: 12px; text-align: center; }
