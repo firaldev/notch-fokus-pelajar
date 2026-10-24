@@ -329,6 +329,25 @@
     }).catch(function () { /* tidak ada sesi media: biarkan tampilan terakhir */ });
   }, 1000);
 
+  // ---------- v0.11: overlay kecerahan (polling WMI tiap 2 detik) ----------
+  var lastBrightness = null, brightnessFailures = 0, brightnessDisabled = false;
+  setInterval(function () {
+    if (brightnessDisabled) { return; }
+    tauriInvoke("brightness_level").then(function (v) {
+      if (typeof v !== "number") { return; }
+      brightnessFailures = 0;
+      if (lastBrightness !== null && Math.abs(v - lastBrightness) >= 2) {
+        tauriInvoke("show_overlay", { kind: "brightness", value: Math.round(v) });
+      }
+      lastBrightness = v;
+    }).catch(function () {
+      brightnessFailures += 1;
+      // Perangkat tanpa kecerahan WMI (mis. monitor eksternal): berhenti
+      // polling supaya tidak membebani CPU dengan kueri yang selalu gagal.
+      if (brightnessFailures >= 5) { brightnessDisabled = true; }
+    });
+  }, 2000);
+
   // ---------- v0.6/v0.7: menu bar ala MacBook ----------
   document.querySelectorAll(".bar-menu").forEach(function (btn) {
     btn.addEventListener("click", function () {

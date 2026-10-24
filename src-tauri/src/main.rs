@@ -70,7 +70,7 @@ fn show_overlay(app: tauri::AppHandle, kind: String, value: f64) -> Result<(), S
     if let Some(overlay) = app.get_webview_window("overlay") {
         if let Ok(Some(monitor)) = overlay.primary_monitor() {
             let ms = monitor.size();
-            let y = ms.height.saturating_sub(84) / 2;
+            let y = ms.height.saturating_sub(240) / 2;
             let _ = overlay.set_position(tauri::Position::Physical(
                 tauri::PhysicalPosition { x: 24, y: y as i32 },
             ));
@@ -120,6 +120,29 @@ async fn media_info() -> Result<MediaInfo, String> {
         return Err("tidak ada media".to_string());
     }
     Ok(MediaInfo { title, artist, position_secs: position, duration_secs: duration, playing })
+}
+
+#[tauri::command]
+fn brightness_level() -> Result<f32, String> {
+    #[cfg(target_os = "windows")]
+    {
+        #[allow(non_snake_case)]
+        #[derive(serde::Deserialize)]
+        struct MonitorBrightness {
+            CurrentBrightness: u8,
+        }
+        let con = wmi::WMIConnection::with_namespace_path("ROOT\\WMI")
+            .map_err(|e| format!("{:?}", e))?;
+        let results: Vec<MonitorBrightness> = con
+            .raw_query("SELECT CurrentBrightness FROM WmiMonitorBrightness")
+            .map_err(|e| format!("{:?}", e))?;
+        let first = results.into_iter().next().ok_or("tidak ada monitor WMI")?;
+        Ok(first.CurrentBrightness as f32)
+    }
+    #[cfg(not(target_os = "windows"))]
+    {
+        Err("kecerahan hanya tersedia di Windows".to_string())
+    }
 }
 
 #[tauri::command]
@@ -342,7 +365,8 @@ fn main() {
             set_taskbar_visible,
             show_overlay,
             volume_level,
-            media_info
+            media_info,
+            brightness_level
         ])
         .setup(|app| {
             // Posisikan jendela di atas-tengah layar utama.
