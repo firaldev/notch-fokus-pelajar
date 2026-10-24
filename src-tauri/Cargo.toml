@@ -1,6 +1,6 @@
 [package]
 name = "notch-fokus-pelajar"
-version = "0.1.0"
+version = "0.2.0"
 description = "Notch Fokus Pelajar — notch ringan di atas layar Windows untuk pelajar"
 authors = ["Notch Fokus Pelajar"]
 edition = "2021"
