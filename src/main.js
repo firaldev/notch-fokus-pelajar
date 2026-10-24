@@ -237,15 +237,27 @@
 
   // ---------- v0.9: garis idle di tepi atas (mode Notch saja) ----------
   var idleTimer = null;
+  // v0.10: saat idle, jendela ikut menyusut jadi 440x6 — tidak ada area
+  // jendela kosong yang bisa tampil sebagai kotak putih.
   function goIdle() {
     if (document.body.classList.contains("bar-mode")) { return; }
     if (notch.classList.contains("expanded")) { return; }
     document.body.classList.add("notch-idle");
+    var win = tauriWindow();
+    if (win && win.setSize) {
+      try { win.setSize(new window.__TAURI__.window.LogicalSize(440, 6)).catch(function () {}); } catch (e) {}
+    }
   }
   function wakeIdle() {
+    if (document.body.classList.contains("bar-mode")) {
+      if (idleTimer) { clearTimeout(idleTimer); }
+      idleTimer = setTimeout(goIdle, 4000);
+      return;
+    }
     document.body.classList.remove("notch-idle");
     if (idleTimer) { clearTimeout(idleTimer); }
     idleTimer = setTimeout(goIdle, 4000);
+    setNotchSize(false);
   }
   document.body.addEventListener("mouseenter", wakeIdle);
   document.body.addEventListener("mouseleave", function () {
@@ -289,6 +301,32 @@
       volumeFailures += 1;
       if (volumeFailures > 10) { lastVolume = null; }
     });
+  }, 1000);
+
+  // ---------- v0.10: info lagu dari pemutar aktif (GSMTC Windows) ----------
+  function fmtTime(sec) {
+    sec = Math.max(0, Math.floor(sec || 0));
+    var m = Math.floor(sec / 60), s = sec % 60;
+    return (m < 10 ? "0" + m : m) + ":" + (s < 10 ? "0" + s : s);
+  }
+  setInterval(function () {
+    tauriInvoke("media_info").then(function (info) {
+      if (!info || !info.title) {
+        $("music-track").textContent = "Tidak ada media";
+        $("music-artist").textContent = "";
+        $("music-elapsed").textContent = "00:00";
+        $("music-remaining").textContent = "-00:00";
+        $("music-fill").style.width = "0%";
+        return;
+      }
+      $("music-track").textContent = info.title;
+      $("music-artist").textContent = info.artist || "";
+      $("music-elapsed").textContent = fmtTime(info.position_secs);
+      var remain = Math.max(0, (info.duration_secs || 0) - (info.position_secs || 0));
+      $("music-remaining").textContent = "-" + fmtTime(remain);
+      var pct = info.duration_secs > 0 ? Math.min(100, Math.round(info.position_secs / info.duration_secs * 100)) : 0;
+      $("music-fill").style.width = pct + "%";
+    }).catch(function () { /* tidak ada sesi media: biarkan tampilan terakhir */ });
   }, 1000);
 
   // ---------- v0.6/v0.7: menu bar ala MacBook ----------

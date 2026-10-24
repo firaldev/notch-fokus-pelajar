@@ -81,6 +81,47 @@ fn show_overlay(app: tauri::AppHandle, kind: String, value: f64) -> Result<(), S
     Ok(())
 }
 
+#[derive(serde::Serialize)]
+struct MediaInfo {
+    title: String,
+    artist: String,
+    position_secs: i64,
+    duration_secs: i64,
+    playing: bool,
+}
+
+#[tauri::command]
+async fn media_info() -> Result<MediaInfo, String> {
+    use windows::Media::Control::{
+        GlobalSystemMediaTransportControlsSessionManager,
+        GlobalSystemMediaTransportControlsSessionPlaybackStatus,
+    };
+    let manager = GlobalSystemMediaTransportControlsSessionManager::RequestAsync()
+        .map_err(|e| e.to_string())?
+        .await
+        .map_err(|e| e.to_string())?;
+    let session = manager.GetCurrentSession().map_err(|e| e.to_string())?;
+    let props = session
+        .TryGetMediaPropertiesAsync()
+        .map_err(|e| e.to_string())?
+        .await
+        .map_err(|e| e.to_string())?;
+    let timeline = session.GetTimelineProperties().map_err(|e| e.to_string())?;
+    let playback = session.GetPlaybackInfo().map_err(|e| e.to_string())?;
+    let title = props.Title().map(|h| h.to_string()).unwrap_or_default();
+    let artist = props.Artist().map(|h| h.to_string()).unwrap_or_default();
+    let position = timeline.Position().map(|t| t.Duration / 10_000_000).unwrap_or(0);
+    let duration = timeline.EndTime().map(|t| t.Duration / 10_000_000).unwrap_or(0);
+    let playing = playback
+        .PlaybackStatus()
+        .map(|st| st == GlobalSystemMediaTransportControlsSessionPlaybackStatus::Playing)
+        .unwrap_or(false);
+    if title.is_empty() {
+        return Err("tidak ada media".to_string());
+    }
+    Ok(MediaInfo { title, artist, position_secs: position, duration_secs: duration, playing })
+}
+
 #[tauri::command]
 fn volume_level() -> Result<f32, String> {
     #[cfg(target_os = "windows")]
@@ -300,7 +341,8 @@ fn main() {
             set_dock_visible,
             set_taskbar_visible,
             show_overlay,
-            volume_level
+            volume_level,
+            media_info
         ])
         .setup(|app| {
             // Posisikan jendela di atas-tengah layar utama.

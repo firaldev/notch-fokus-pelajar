@@ -49,11 +49,13 @@ body {
 }
 
 /* v0.9: garis idle — notch ciut jadi garis hitam 6px saat mouse menjauh. */
+/* v0.10: garis idle selebar jendela penuh — tidak ada lagi area jendela
+   kosong di samping garis yang bisa tampil sebagai kotak putih. */
 body.notch-idle .notch {
-  width: 220px;
+  width: 100%;
   height: 6px;
   background: #000000;
-  border-radius: 0 0 8px 8px;
+  border-radius: 0;
 }
 body.notch-idle .notch-bar,
 body.notch-idle .panel { display: none; }
@@ -240,3 +242,10 @@ body:not(.bar-mode) #toggle-panel { display: none; }
 .water-bar { display: inline-block; height: 10px; background: #38bdf8; border-radius: 5px; }
 
 body.bar-mode .notch-clock { display: none; }
+
+/* v0.10: info lagu gaya Nusa di halaman Musik. */
+.music-track { font-weight: 700; font-size: 17px; margin: 8px 0 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.music-progress { display: flex; align-items: center; gap: 10px; margin: 12px 0; }
+.music-progress .track { flex: 1; height: 6px; background: #3f3f46; border-radius: 3px; overflow: hidden; }
+#music-fill { height: 100%; background: #f2f2f2; border-radius: 3px; width: 0%; }
+.music-time { font-variant-numeric: tabular-nums; font-size: 13px; color: #d4d4d8; white-space: nowrap; }

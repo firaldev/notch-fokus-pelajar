@@ -45,8 +45,15 @@
 
       <div class="page active" data-page="music">
         <section class="card" aria-labelledby="music-title">
-          <h2 id="music-title">Kontrol Musik</h2>
-          <p id="music-note" class="hint">Mengontrol pemutar yang sedang aktif di Windows (Spotify, YouTube, dll.) lewat tombol media sistem.</p>
+          <h2 id="music-title">Musik</h2>
+          <p id="music-track" class="music-track">Tidak ada media</p>
+          <p id="music-artist" class="hint"></p>
+          <div class="music-progress">
+            <span id="music-elapsed" class="music-time">00:00</span>
+            <div class="track"><div id="music-fill"></div></div>
+            <span id="music-remaining" class="music-time">-00:00</span>
+          </div>
+          <p id="music-note" class="hint">Judul dan progres dibaca dari pemutar yang sedang aktif di Windows (Spotify, YouTube, dll.); tombol di bawah mengirim tombol media sistem ke pemutar itu.</p>
           <div class="row">
             <button class="music-btn" type="button" data-music="previous">⏮ Sebelumnya</button>
             <button class="music-btn" type="button" data-music="play-pause">▶ / ⏸ Putar/Jeda</button>
@@ -145,7 +152,7 @@
       </div>
 
       <footer class="footer">
-        <p>Notch Fokus Pelajar v0.9.0 — lokal, tanpa akun.</p>
+        <p>Notch Fokus Pelajar v0.10.0 — lokal, tanpa akun.</p>
       </footer>
     </section>
   </main>
