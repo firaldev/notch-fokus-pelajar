@@ -111,7 +111,7 @@
         } else {
           var size = expanded
             ? new window.__TAURI__.window.LogicalSize(440, tabHeights[currentTab] || 540)
-            : new window.__TAURI__.window.LogicalSize(440, 64);
+            : new window.__TAURI__.window.LogicalSize(440, 56);
           win.setSize(size).catch(function () { /* biarkan CSS yang bekerja */ });
         }
       } catch (e) { /* biarkan CSS yang bekerja */ }

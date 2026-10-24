@@ -13,10 +13,13 @@ html, body {
    Di aplikasi Tauri, jendela transparan-lah yang diposisikan atas-tengah
    oleh Rust (lihat src-tauri/src/main.rs), dan jendela bisa digeser
    lewat header (data-tauri-drag-region). */
+/* v0.5 gaya Nusa: notch menempel di tepi atas layar (tanpa celah 8px),
+   bukan pil mengambang. Sudut atas kotak, sudut bawah membulat, tanpa
+   border dan tanpa bayangan, jadi tidak terlihat seperti kotak. */
 body {
   display: flex;
   justify-content: center;
-  padding-top: 8px;
+  padding-top: 0;
   min-height: 100vh;
 }
 
@@ -25,19 +28,21 @@ body {
   max-width: calc(100vw - 16px);
   height: 56px;
   overflow: hidden;
-  background: #0b0b0f;
-  border: 1px solid #2a2a35;
-  border-radius: 28px;
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.45);
+  background: #000000;
+  border: none;
+  border-radius: 0 0 28px 28px;
+  box-shadow: none;
   transition: height 0.25s ease, border-radius 0.25s ease;
 }
 
 /* v0.2: panel membesar tanpa scroll. Isi dibagi tab, satu tab satu fokus,
    sehingga tinggi panel cukup untuk satu tab, bukan semua kartu sekaligus. */
+/* v0.5: saat membesar pun tetap menggantung dari tepi atas, sudut bawah
+   saja yang membulat, tanpa border/bayangan kotak. */
 .notch:hover,
 .notch.expanded {
   height: 540px;
-  border-radius: 20px;
+  border-radius: 0 0 20px 20px;
   overflow: hidden;
 }
 
@@ -52,15 +57,22 @@ body {
 /* v0.3 Bar mode: bar atas permanen ala menu bar macOS, full-width,
    tinggi 32px saat ciut. Panel tetap 440px dan terpusat di bawah bar
    saat membesar, jadi panel tidak ikut melebar penuh. */
+/* v0.5: bar ciut dibuat tembus pandang gelap (bukan kotak hitam pekat),
+   tanpa border. Saat membesar, latar bar jadi transparan dan panel
+   hitam 440px-lah yang menggantung di bawahnya. */
 body.bar-mode { padding-top: 0; }
 .notch.bar-mode {
   width: 100vw;
   max-width: none;
+  background: rgba(0, 0, 0, 0.6);
   border-radius: 0;
-  border-left: none;
-  border-right: none;
-  border-top: none;
+  border: none;
   height: 32px;
+}
+.notch.bar-mode.expanded { background: transparent; }
+.notch.bar-mode.expanded .panel {
+  background: #000000;
+  border-radius: 0 0 20px 20px;
 }
 .notch.bar-mode .notch-bar { height: 32px; padding: 0 12px; }
 .notch.bar-mode:hover,
