@@ -1,0 +1,69 @@
+# Build installer Windows untuk Notch Fokus Pelajar.
+#
+# Cara pakai:
+#   * Push ke branch main -> workflow jalan, artefak installer tersimpan
+#     di halaman Actions (langkah upload-artifact, bukan rilis publik).
+#   * Buat tag, mis. v0.1.0 -> workflow jalan dan membuat GitHub Release
+#     berisi installer (.msi) dan setup (.exe) untuk dibagikan langsung
+#     ke komunitas (bukan lewat Microsoft Store).
+#
+# Catatan ikon: file biner di src-tauri/icons/ TIDAK di-push ke repo
+# (alat push hanya menerima file teks). Ikon placeholder di-generate
+# saat build oleh scripts/generate-icons.js (Node tanpa dependensi),
+# sebelum langkah build Tauri, sehingga tauri.conf.json tetap menemukan
+# semua ikon yang dirujuknya.
+#
+# Workflow ini TIDAK dijalankan dari VM Linux — ia berjalan di
+# runner Windows milik GitHub Actions, karena hanya di sanalah
+# toolchain Rust + WebView2 Windows tersedia dengan benar.
+
+name: Build Windows
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Generate placeholder icons
+        run: node scripts/generate-icons.js
+
+      - name: Build dengan Tauri Action
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: ${{ github.ref_name }}
+          releaseName: "Notch Fokus Pelajar ${{ github.ref_name }}"
+          releaseBody: "Prototipe Notch Fokus Pelajar untuk Windows. Dibagikan langsung untuk pemakaian pribadi dan komunitas (bukan Microsoft Store)."
+          releaseDraft: true
+          prerelease: false
+
+      - name: Upload bundle Windows sebagai artefak Actions
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: notch-fokus-pelajar-windows
+          path: src-tauri/target/release/bundle/**/*
+          if-no-files-found: warn
