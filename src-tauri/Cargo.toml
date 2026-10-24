@@ -16,7 +16,7 @@ tauri-plugin-dialog = "2"
 tauri-plugin-opener = "2"
 tauri-plugin-notification = "2"
 [target.'cfg(windows)'.dependencies]
-winapi = { version = "0.3", features = ["winuser", "wlanapi"] }
+winapi = { version = "0.3", features = ["winuser", "wlanapi", "winerror"] }
 
 [profile.release]
 lto = true
