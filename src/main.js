@@ -231,16 +231,23 @@
     if (timerId) { window.clearInterval(timerId); timerId = null; }
     running = false;
   }
+  // v0.4: notifikasi sistem Windows, di samping banner di aplikasi.
+  // Di pratinjau web panggilan ini tidak melakukan apa-apa.
+  function notify(title, body) {
+    tauriInvoke("send_notification", { title: title, body: body });
+  }
   function finishPeriod() {
     stopTimer();
     beep();
     if (mode === "focus") {
       sessions += 1;
       showBanner("Sesi fokus selesai! Waktunya istirahat " + settings.break + " menit.");
+      notify("Notch Fokus Pelajar", "Sesi fokus selesai! Waktunya istirahat " + settings.break + " menit.");
       mode = "break";
       remaining = settings.break * 60;
     } else {
       showBanner("Istirahat selesai. Siap fokus lagi?");
+      notify("Notch Fokus Pelajar", "Istirahat selesai. Siap fokus lagi?");
       mode = "focus";
       remaining = settings.focus * 60;
     }
@@ -330,12 +337,14 @@
     if (waterLeft === 0) {
       beep();
       showBanner("Waktunya minum air 💧 — klik “Sudah minum” untuk mengulang pengingat.");
+      notify("Notch Fokus Pelajar", "Waktunya minum air 💧");
       waterLeft = settings.water * 60;
     }
     if (restLeft > 0) { restLeft -= 1; }
     if (restLeft === 0) {
       beep();
       showBanner("Waktunya istirahat sejenak 😌 — regangkan badan, jauhkan mata dari layar.");
+      notify("Notch Fokus Pelajar", "Waktunya istirahat sejenak 😌");
       restLeft = settings.rest * 60;
     }
     $("water-countdown").textContent = formatSeconds(waterLeft);
@@ -348,6 +357,10 @@
   $("btn-rest-done").addEventListener("click", function () {
     restLeft = settings.rest * 60;
     showBanner("Pengingat istirahat diulang.");
+  });
+  $("btn-test-notification").addEventListener("click", function () {
+    notify("Notch Fokus Pelajar", "Notifikasi Windows berfungsi. Ini pesan uji.");
+    showBanner("Notifikasi uji dikirim. Kalau toast Windows tidak muncul, cek setelan Notifikasi Windows.");
   });
 
   // ---------- File shelf ----------
@@ -418,11 +431,22 @@
   });
   renderShelf();
 
-  // ---------- Kontrol musik: placeholder yang jujur ----------
+  // ---------- Kontrol musik v0.4: tombol media sistem Windows ----------
+  // Tombol ini mengirim media key ke Windows, sehingga pemutar yang
+  // sedang aktif (Spotify, YouTube di browser, atau pemutar lain)
+  // yang merespons — bukan ke satu aplikasi yang dipilih manual.
   document.querySelectorAll(".music-btn").forEach(function (btn) {
     btn.addEventListener("click", function () {
-      $("music-note").textContent = "Tombol ini belum terhubung ke pemutar musik. " +
-        "Integrasi SMTC Windows adalah langkah berikutnya dan belum ada di prototipe ini.";
+      var action = btn.getAttribute("data-music");
+      if (action === "play-pause") { action = "play-pause"; }
+      else if (action === "previous") { action = "previous"; }
+      else if (action === "next") { action = "next"; }
+      if (tauriWindow()) {
+        tauriInvoke("media_key", { action: action });
+        $("music-note").textContent = "Tombol media dikirim ke pemutar yang sedang aktif di Windows.";
+      } else {
+        $("music-note").textContent = "Di pratinjau web tombol media tidak bisa dikirim; di aplikasi Windows tombol ini mengontrol pemutar yang sedang aktif.";
+      }
     });
   });
 
@@ -430,10 +454,29 @@
   function renderOnline() {
     var online = $("online-status");
     if (online) { online.textContent = window.navigator.onLine ? "Online" : "Offline"; }
+    refreshWifi();
+  }
+  // v0.4: Wi-Fi diperiksa tiap 10 detik, bukan tiap detik, supaya
+  // tidak membebani CPU — SSID dan sinyal tidak berubah secepat itu.
+  function refreshWifi() {
+    var el = $("wifi-status");
+    if (!el) { return; }
+    tauriInvoke("wifi_status").then(function (result) {
+      if (result && result.connected) {
+        el.textContent = (result.ssid || "Terhubung") + " (" +
+          (result.signal_percent !== null && result.signal_percent !== undefined
+            ? result.signal_percent + "%" : "—") + ")";
+      } else if (result) {
+        el.textContent = "Tidak terhubung / tanpa Wi-Fi";
+      } else {
+        el.textContent = "Hanya di aplikasi Windows.";
+      }
+    });
   }
   window.addEventListener("online", renderOnline);
   window.addEventListener("offline", renderOnline);
   renderOnline();
+  window.setInterval(refreshWifi, 10000);
 
   if (window.navigator.getBattery) {
     window.navigator.getBattery().then(function (battery) {
