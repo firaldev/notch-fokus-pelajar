@@ -1,5 +1,9 @@
 # Notch Fokus Pelajar
 
+![Logo Notch Fokus Pelajar](docs/logo/logo-lengkap.svg)
+
+Halaman pengenalan (landing page) ada di [`docs/index.html`](docs/index.html) — folder `docs/` ini juga siap dipakai sebagai sumber GitHub Pages bila repo ini nanti dijadikan publik.
+
 Notch ringan di atas layar Windows untuk pelajar: timer Pomodoro, to-do tugas, pengingat air dan istirahat, file shelf, status baterai, dan kontrol musik (placeholder — lihat bawah).
 
 **Aplikasi ini TIDAK untuk Microsoft Store.** Distribusinya untuk pemakaian pribadi dan komunitas, lewat GitHub Releases atau file installer/zip yang dibagikan langsung.
