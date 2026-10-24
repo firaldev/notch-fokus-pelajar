@@ -36,6 +36,18 @@ async fn open_path(app: tauri::AppHandle, path: String) -> Result<(), String> {
 }
 
 #[tauri::command]
+fn set_dock_visible(app: tauri::AppHandle, visible: bool) -> Result<(), String> {
+    if let Some(dock) = app.get_webview_window("dock") {
+        if visible {
+            dock.show().map_err(|e| e.to_string())?;
+        } else {
+            dock.hide().map_err(|e| e.to_string())?;
+        }
+    }
+    Ok(())
+}
+
+#[tauri::command]
 async fn send_notification(
     app: tauri::AppHandle,
     title: String,
@@ -191,11 +203,25 @@ fn main() {
             open_path,
             media_key,
             wifi_status,
-            send_notification
+            send_notification,
+            set_dock_visible
         ])
         .setup(|app| {
             // Posisikan jendela di atas-tengah layar utama.
             // Kalau monitor tidak terbaca, biarkan posisi default Tauri.
+            // Posisikan Dock di bawah-tengah layar (di atas taskbar, perkiraan 48px).
+            if let Some(dock) = app.get_webview_window("dock") {
+                if let Ok(Some(monitor)) = dock.primary_monitor() {
+                    let ms = monitor.size();
+                    let dw: u32 = 560;
+                    let dh: u32 = 76;
+                    let x = ms.width.saturating_sub(dw) / 2;
+                    let y = ms.height.saturating_sub(dh + 48);
+                    let _ = dock.set_position(tauri::Position::Physical(
+                        tauri::PhysicalPosition { x: x as i32, y: y as i32 },
+                    ));
+                }
+            }
             if let Some(window) = app.get_webview_window("main") {
                 if let Ok(Some(monitor)) = window.primary_monitor() {
                     let monitor_size = monitor.size();

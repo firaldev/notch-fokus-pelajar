@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dock</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: transparent; font-family: system-ui, "Segoe UI", Arial, sans-serif; }
+  body { display: flex; justify-content: center; align-items: flex-end; height: 100vh; padding-bottom: 6px; }
+  .dock {
+    display: flex; gap: 6px; align-items: flex-end;
+    background: rgba(30, 30, 35, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 20px; padding: 7px 10px;
+  }
+  .dock-btn {
+    position: relative; width: 48px; height: 48px; border: none; border-radius: 12px;
+    background: #2a2a35; color: #f2f2f2; cursor: pointer; padding: 7px;
+    transition: transform 0.15s ease;
+  }
+  .dock-btn:hover { transform: scale(1.35) translateY(-6px); }
+  .dock-btn svg { width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .dock-btn .tip {
+    position: absolute; left: 50%; bottom: 58px; transform: translateX(-50%);
+    background: #111; color: #fff; font-size: 12px; padding: 4px 8px; border-radius: 8px;
+    white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity 0.15s ease;
+  }
+  .dock-btn:hover .tip { opacity: 1; }
+  .sep { width: 1px; align-self: stretch; background: rgba(255,255,255,0.25); margin: 6px 2px; }
+</style>
+</head>
+<body>
+  <nav class="dock" aria-label="Dock">
+    <button class="dock-btn" type="button" data-page="music"><svg viewBox="0 0 24 24"><path d="M9 18V6l10-2v11"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="16.5" cy="15" r="2.5"/></svg><span class="tip">Musik</span></button>
+    <button class="dock-btn" type="button" data-page="focus"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span class="tip">Pomodoro</span></button>
+    <button class="dock-btn" type="button" data-page="water"><svg viewBox="0 0 24 24"><path d="M12 3c3 4 6 7 6 11a6 6 0 1 1-12 0c0-4 3-7 6-11z"/></svg><span class="tip">Air</span></button>
+    <button class="dock-btn" type="button" data-page="todo"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M8 12l2.5 2.5L16 9"/></svg><span class="tip">Tugas</span></button>
+    <button class="dock-btn" type="button" data-page="shelf"><svg viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg><span class="tip">Shelf</span></button>
+    <button class="dock-btn" type="button" data-page="status"><svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-8M22 20H2"/></svg><span class="tip">Status</span></button>
+    <span class="sep" aria-hidden="true"></span>
+    <button class="dock-btn" type="button" id="dock-explorer"><svg viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M3 9h18"/></svg><span class="tip">File Explorer</span></button>
+    <button class="dock-btn" type="button" id="dock-hide"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9 9l6 6M15 9l-6 6"/></svg><span class="tip">Sembunyikan Dock</span></button>
+  </nav>
+  <script>
+    (function () {
+      function invoke(name, args) {
+        try {
+          if (window.__TAURI__ && window.__TAURI__.core && window.__TAURI__.core.invoke) {
+            return window.__TAURI__.core.invoke(name, args || {});
+          }
+        } catch (e) {}
+        return Promise.resolve(null);
+      }
+      function emit(name, payload) {
+        try {
+          if (window.__TAURI__ && window.__TAURI__.event && window.__TAURI__.event.emit) {
+            return window.__TAURI__.event.emit(name, payload);
+          }
+        } catch (e) {}
+        return Promise.resolve(null);
+      }
+      document.querySelectorAll("[data-page]").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          emit("nfp-open-page", { page: btn.getAttribute("data-page") });
+        });
+      });
+      document.getElementById("dock-explorer").addEventListener("click", function () {
+        invoke("open_path", { path: "C:\\" });
+      });
+      document.getElementById("dock-hide").addEventListener("click", function () {
+        emit("nfp-dock-hidden", {}).then(function () {
+          try {
+            if (window.__TAURI__ && window.__TAURI__.window) {
+              window.__TAURI__.window.getCurrentWindow().hide();
+            }
+          } catch (e) {}
+        });
+      });
+    })();
+  </script>
+</body>
+</html>

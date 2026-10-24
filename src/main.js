@@ -195,6 +195,46 @@
   });
   showPage("music");
 
+  // ---------- v0.8: Dock bawah ala MacBook (bisa dimatikan) ----------
+  var dockVisible = true;
+  function setDockUI(v) {
+    var b = $("btn-dock-toggle");
+    if (b) { b.textContent = v ? "Dock: Aktif" : "Dock: Nonaktif"; }
+  }
+  function applyDock(v) {
+    dockVisible = v;
+    try { window.localStorage.setItem("nfp_dock", v ? "on" : "off"); } catch (e) {}
+    setDockUI(v);
+    tauriInvoke("set_dock_visible", { visible: v });
+  }
+  (function initDock() {
+    try {
+      var saved = window.localStorage.getItem("nfp_dock");
+      dockVisible = saved !== "off";
+    } catch (e) { dockVisible = true; }
+    setDockUI(dockVisible);
+    tauriInvoke("set_dock_visible", { visible: dockVisible });
+  })();
+  var dockToggleBtn = $("btn-dock-toggle");
+  if (dockToggleBtn) {
+    dockToggleBtn.addEventListener("click", function () { applyDock(!dockVisible); });
+  }
+  if (window.__TAURI__ && window.__TAURI__.event && window.__TAURI__.event.listen) {
+    window.__TAURI__.event.listen("nfp-open-page", function (e) {
+      var page = e && e.payload && e.payload.page;
+      if (page) {
+        showPage(page);
+        notch.classList.add("expanded");
+        setNotchSize(true);
+      }
+    });
+    window.__TAURI__.event.listen("nfp-dock-hidden", function () {
+      dockVisible = false;
+      try { window.localStorage.setItem("nfp_dock", "off"); } catch (e) {}
+      setDockUI(false);
+    });
+  }
+
   // ---------- v0.6/v0.7: menu bar ala MacBook ----------
   document.querySelectorAll(".bar-menu").forEach(function (btn) {
     btn.addEventListener("click", function () {
