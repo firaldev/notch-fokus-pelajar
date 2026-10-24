@@ -70,12 +70,17 @@
     } catch (e) { /* bukan Tauri */ }
     return null;
   }
+  // v0.2: tinggi jendela membesar disesuaikan per tab, supaya panel
+  // tidak perlu di-scroll. Posisi jendela tidak diubah di sini, jadi
+  // jendela yang sudah digeser pengguna tetap di tempatnya.
+  var currentTab = "focus";
+  var tabHeights = { focus: 400, todo: 480, other: 540 };
   function setNotchSize(expanded) {
     var win = tauriWindow();
     if (win && win.setSize) {
       try {
         var size = expanded
-          ? new window.__TAURI__.window.LogicalSize(440, 660)
+          ? new window.__TAURI__.window.LogicalSize(440, tabHeights[currentTab] || 540)
           : new window.__TAURI__.window.LogicalSize(440, 64);
         win.setSize(size).catch(function () { /* biarkan CSS yang bekerja */ });
       } catch (e) { /* biarkan CSS yang bekerja */ }
@@ -96,11 +101,29 @@
     setNotchSize(expanded);
   });
 
+  // ---------- Tab panel ----------
+  document.querySelectorAll(".tab-btn").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      currentTab = btn.getAttribute("data-tab");
+      document.querySelectorAll(".tab-btn").forEach(function (b) {
+        b.classList.toggle("active", b === btn);
+        b.setAttribute("aria-selected", b === btn ? "true" : "false");
+      });
+      document.querySelectorAll(".tab-panel").forEach(function (panel) {
+        panel.classList.toggle("active", panel.getAttribute("data-panel") === currentTab);
+      });
+      if (notch.classList.contains("expanded")) { setNotchSize(true); }
+    });
+  });
+
   // ---------- Jam ----------
   function tickClock() {
     var now = new Date();
-    $("clock").textContent = String(now.getHours()).padStart(2, "0") + ":" +
-      String(now.getMinutes()).padStart(2, "0");
+    var clock = $("clock");
+    if (clock) {
+      clock.textContent = String(now.getHours()).padStart(2, "0") + ":" +
+        String(now.getMinutes()).padStart(2, "0");
+    }
   }
   tickClock();
   window.setInterval(tickClock, 1000);
@@ -339,8 +362,8 @@
 
   // ---------- Status perangkat ----------
   function renderOnline() {
-    $("online-status").textContent = window.navigator.onLine ? "Online" : "Offline";
-    $("mini-status").textContent = window.navigator.onLine ? "Online" : "Offline";
+    var online = $("online-status");
+    if (online) { online.textContent = window.navigator.onLine ? "Online" : "Offline"; }
   }
   window.addEventListener("online", renderOnline);
   window.addEventListener("offline", renderOnline);
