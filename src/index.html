@@ -13,95 +13,98 @@
       <span class="notch-dot" aria-hidden="true"></span>
       <span class="notch-title">Notch Fokus Pelajar</span>
       <span id="mini-timer" class="mini-timer" aria-live="polite">25:00 · Fokus</span>
-      <span id="clock" class="clock">--:--</span>
-      <span id="mini-status" class="mini-status">—</span>
       <button id="toggle-panel" type="button" aria-label="Buka atau tutup panel">▾</button>
     </header>
 
-    <!-- Panel yang muncul saat notch membesar -->
+    <!-- Panel yang muncul saat notch membesar: satu tab, satu fokus -->
     <section id="panel" class="panel" aria-label="Panel Notch Fokus Pelajar">
       <p id="banner" class="banner hidden" role="status"></p>
-      <p class="privacy-note">Data hanya tersimpan di perangkat ini. Tanpa akun, tanpa sinkronisasi cloud, tanpa pelacakan.</p>
+      <nav class="tabs" aria-label="Tab panel">
+        <button class="tab-btn active" type="button" data-tab="focus" aria-selected="true">Fokus</button>
+        <button class="tab-btn" type="button" data-tab="todo" aria-selected="false">Tugas</button>
+        <button class="tab-btn" type="button" data-tab="other" aria-selected="false">Lainnya</button>
+      </nav>
 
-      <section class="card" aria-labelledby="pomodoro-title">
-        <h2 id="pomodoro-title">Timer Pomodoro</h2>
-        <p id="timer-display" class="timer-display" aria-live="polite">25:00</p>
-        <p id="timer-mode">Mode: Fokus · Sesi selesai: <span id="sessions">0</span></p>
-        <div class="row">
-          <button id="btn-start" type="button">Mulai</button>
-          <button id="btn-pause" type="button">Jeda</button>
-          <button id="btn-reset" type="button">Reset</button>
-          <button id="btn-switch" type="button">Ganti ke Istirahat</button>
-        </div>
-        <div class="row settings-row">
-          <label>Fokus (menit)
-            <input id="focus-minutes" type="number" min="1" max="120" value="25" />
-          </label>
-          <label>Istirahat (menit)
-            <input id="break-minutes" type="number" min="1" max="60" value="5" />
-          </label>
-        </div>
-      </section>
+      <div class="tab-panel active" data-panel="focus">
+        <section class="card" aria-labelledby="pomodoro-title">
+          <h2 id="pomodoro-title">Timer Pomodoro</h2>
+          <p id="timer-display" class="timer-display" aria-live="polite">25:00</p>
+          <p id="timer-mode">Mode: Fokus · Sesi selesai: <span id="sessions">0</span></p>
+          <div class="row">
+            <button id="btn-start" type="button">Mulai</button>
+            <button id="btn-pause" type="button">Jeda</button>
+            <button id="btn-reset" type="button">Reset</button>
+            <button id="btn-switch" type="button">Ganti ke Istirahat</button>
+          </div>
+          <div class="row settings-row">
+            <label>Fokus (menit)
+              <input id="focus-minutes" type="number" min="1" max="120" value="25" />
+            </label>
+            <label>Istirahat (menit)
+              <input id="break-minutes" type="number" min="1" max="60" value="5" />
+            </label>
+          </div>
+        </section>
+      </div>
 
-      <section class="card" aria-labelledby="todo-title">
-        <h2 id="todo-title">To-do Tugas</h2>
-        <div class="row">
-          <input id="todo-input" type="text" placeholder="Tulis tugas, lalu tekan Tambah…" maxlength="200" />
-          <button id="btn-add-todo" type="button">Tambah</button>
-        </div>
-        <ul id="todo-list" class="todo-list"></ul>
-        <p class="hint">Tugas tersimpan otomatis di perangkat ini (localStorage).</p>
-      </section>
+      <div class="tab-panel" data-panel="todo">
+        <section class="card" aria-labelledby="todo-title">
+          <h2 id="todo-title">To-do Tugas</h2>
+          <div class="row">
+            <input id="todo-input" type="text" placeholder="Tulis tugas, lalu tekan Tambah…" maxlength="200" />
+            <button id="btn-add-todo" type="button">Tambah</button>
+          </div>
+          <ul id="todo-list" class="todo-list"></ul>
+          <p class="hint">Tersimpan lokal.</p>
+        </section>
+      </div>
 
-      <section class="card" aria-labelledby="reminder-title">
-        <h2 id="reminder-title">Pengingat Air &amp; Istirahat</h2>
-        <p>Air berikutnya dalam: <strong id="water-countdown">—</strong> · Istirahat berikutnya dalam: <strong id="rest-countdown">—</strong></p>
-        <div class="row settings-row">
-          <label>Interval air (menit)
-            <input id="water-minutes" type="number" min="5" max="240" value="60" />
-          </label>
-          <label>Interval istirahat (menit)
-            <input id="rest-minutes" type="number" min="10" max="240" value="90" />
-          </label>
-        </div>
-        <div class="row">
-          <button id="btn-water-done" type="button">Sudah minum 💧</button>
-          <button id="btn-rest-done" type="button">Sudah istirahat 😌</button>
-        </div>
-        <p class="hint">Ini pengingat di dalam aplikasi. Notifikasi sistem Windows belum diimplementasikan di prototipe ini — lihat README.</p>
-      </section>
+      <div class="tab-panel" data-panel="other">
+        <section class="card" aria-labelledby="reminder-title">
+          <h2 id="reminder-title">Pengingat Air &amp; Istirahat</h2>
+          <p>Air: <strong id="water-countdown">—</strong> · Istirahat: <strong id="rest-countdown">—</strong></p>
+          <div class="row settings-row">
+            <label>Air (menit)
+              <input id="water-minutes" type="number" min="5" max="240" value="60" />
+            </label>
+            <label>Istirahat (menit)
+              <input id="rest-minutes" type="number" min="10" max="240" value="90" />
+            </label>
+          </div>
+          <div class="row">
+            <button id="btn-water-done" type="button">Sudah minum 💧</button>
+            <button id="btn-rest-done" type="button">Sudah istirahat 😌</button>
+          </div>
+          <p class="hint">Pengingat di aplikasi, bukan notifikasi sistem.</p>
+        </section>
 
-      <section class="card" aria-labelledby="shelf-title">
-        <h2 id="shelf-title">File Shelf</h2>
-        <div class="row">
-          <button id="btn-add-file" type="button">Tambah file…</button>
-          <input id="file-input-fallback" type="file" class="hidden" />
-        </div>
-        <ul id="shelf-list" class="shelf-list"></ul>
-        <p class="hint">Di aplikasi Tauri, tombol ini membuka dialog pilih file bawaan Windows. Di pratinjau web, hanya nama file yang tersimpan karena browser tidak memberi akses ke path asli — itu batasan yang disengaja, bukan bug.</p>
-      </section>
+        <section class="card" aria-labelledby="shelf-title">
+          <h2 id="shelf-title">File Shelf</h2>
+          <div class="row">
+            <button id="btn-add-file" type="button">Tambah file…</button>
+            <input id="file-input-fallback" type="file" class="hidden" />
+          </div>
+          <ul id="shelf-list" class="shelf-list"></ul>
+        </section>
 
-      <section class="card" aria-labelledby="music-title">
-        <h2 id="music-title">Kontrol Musik</h2>
-        <p class="placeholder-warning">⚠️ Placeholder yang jujur: integrasi media sistem Windows (SMTC) BELUM diimplementasikan di prototipe ini. Tombol di bawah ini belum mengontrol Spotify, YouTube, atau pemutar lain.</p>
-        <p>Tidak ada lagu yang terhubung.</p>
-        <div class="row">
-          <button class="music-btn" type="button" data-music="previous">⏮ Sebelumnya</button>
-          <button class="music-btn" type="button" data-music="play-pause">▶ / ⏸ Putar/Jeda</button>
-          <button class="music-btn" type="button" data-music="next">Berikutnya ⏭</button>
-        </div>
-        <p id="music-note" class="hint">Langkah berikutnya: hubungkan SMTC Windows lewat Rust (GlobalSystemMediaTransportControlsSessionManager) lalu kirim status lagu ke frontend lewat event Tauri.</p>
-      </section>
+        <section class="card" aria-labelledby="music-title">
+          <h2 id="music-title">Kontrol Musik</h2>
+          <p id="music-note" class="hint">Belum terhubung ke pemutar musik.</p>
+          <div class="row">
+            <button class="music-btn" type="button" data-music="previous">⏮ Sebelumnya</button>
+            <button class="music-btn" type="button" data-music="play-pause">▶ / ⏸ Putar/Jeda</button>
+            <button class="music-btn" type="button" data-music="next">Berikutnya ⏭</button>
+          </div>
+        </section>
 
-      <section class="card" aria-labelledby="status-title">
-        <h2 id="status-title">Status Perangkat</h2>
-        <p>Baterai: <strong id="battery-status">Memeriksa…</strong></p>
-        <p>Koneksi: <strong id="online-status">Memeriksa…</strong></p>
-        <p class="hint">Status baterai memakai navigator.getBattery bila tersedia. Status Wi-Fi spesifik (nama jaringan, kekuatan sinyal) belum diimplementasikan — yang ditampilkan di sini hanya online/offline.</p>
-      </section>
+        <section class="card" aria-labelledby="status-title">
+          <h2 id="status-title">Status Perangkat</h2>
+          <p>Baterai: <strong id="battery-status">Memeriksa…</strong> · Koneksi: <strong id="online-status">Memeriksa…</strong> · Jam: <strong id="clock">--:--</strong></p>
+        </section>
+      </div>
 
       <footer class="footer">
-        <p>Notch Fokus Pelajar v0.1.0 — prototipe. Bukan untuk Microsoft Store; dibagikan langsung untuk pemakaian pribadi dan komunitas.</p>
+        <p>Notch Fokus Pelajar v0.2.0 — lokal, tanpa akun.</p>
       </footer>
     </section>
   </main>
