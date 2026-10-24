@@ -41,7 +41,7 @@ fn main() {
             if let Some(window) = app.get_webview_window("main") {
                 if let Ok(Some(monitor)) = window.primary_monitor() {
                     let monitor_size = monitor.size();
-                    let window_size = window.inner_size().unwrap_or(monitor_size);
+                    let window_size = window.inner_size().unwrap_or(*monitor_size);
                     let x = monitor_size.width.saturating_sub(window_size.width) / 2;
                     let _ = window.set_position(tauri::Position::Physical(
                         tauri::PhysicalPosition { x: x as i32, y: 0 },
