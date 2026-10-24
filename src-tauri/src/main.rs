@@ -171,14 +171,13 @@ fn media_key_impl(action: &str) -> Result<(), String> {
         "previous" => 0xB1,
         _ => return Err(format!("Aksi media tidak dikenal: {}", action)),
     };
+    // v0.9 perbaikan: tombol media adalah extended key — tanpa flag
+    // KEYEVENTF_EXTENDEDKEY, Windows tidak meneruskannya ke SMTC sehingga
+    // pemutar seperti Spotify di browser tidak merespons sama sekali.
     unsafe {
-        winapi::um::winuser::keybd_event(vk, 0, 0, 0);
-        winapi::um::winuser::keybd_event(
-            vk,
-            0,
-            winapi::um::winuser::KEYEVENTF_KEYUP,
-            0,
-        );
+        use winapi::um::winuser::{keybd_event, KEYEVENTF_EXTENDEDKEY, KEYEVENTF_KEYUP};
+        keybd_event(vk, 0, KEYEVENTF_EXTENDEDKEY, 0);
+        keybd_event(vk, 0, KEYEVENTF_EXTENDEDKEY | KEYEVENTF_KEYUP, 0);
     }
     Ok(())
 }
