@@ -79,7 +79,7 @@
   var pages = ["music", "focus", "water", "todo", "shelf", "status"];
   var pageTitles = { music: "Musik", focus: "Pomodoro", water: "Water Reminder", todo: "To-do Tugas", shelf: "Shelf", status: "Status" };
   var currentPage = "music";
-  var pageHeights = { music: 380, focus: 420, water: 540, todo: 480, shelf: 420, status: 380 };
+  var pageHeights = { music: 250, focus: 420, water: 540, todo: 480, shelf: 420, status: 380 };
   var displayMode = load("nfp_mode", "notch"); // "notch" | "bar"
   function monitorLogicalWidth(callback) {
     var win = tauriWindow();
