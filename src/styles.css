@@ -11,7 +11,8 @@ html, body {
 
 /* Di pratinjau web, notch ditampilkan di tengah atas halaman.
    Di aplikasi Tauri, jendela transparan-lah yang diposisikan atas-tengah
-   oleh Rust (lihat src-tauri/src/main.rs). */
+   oleh Rust (lihat src-tauri/src/main.rs), dan jendela bisa digeser
+   lewat header (data-tauri-drag-region). */
 body {
   display: flex;
   justify-content: center;
@@ -31,13 +32,13 @@ body {
   transition: height 0.25s ease, border-radius 0.25s ease;
 }
 
-/* Fallback pratinjau web: hover / kelas expanded membesarkan notch.
-   Di Tauri, JavaScript juga mencoba mengubah ukuran jendela lewat API. */
+/* v0.2: panel membesar tanpa scroll. Isi dibagi tab, satu tab satu fokus,
+   sehingga tinggi panel cukup untuk satu tab, bukan semua kartu sekaligus. */
 .notch:hover,
 .notch.expanded {
-  height: 640px;
+  height: 540px;
   border-radius: 20px;
-  overflow-y: auto;
+  overflow: hidden;
 }
 
 .notch-bar {
@@ -57,9 +58,7 @@ body {
 }
 
 .notch-title { font-weight: 700; white-space: nowrap; }
-.mini-timer { color: #facc15; font-variant-numeric: tabular-nums; white-space: nowrap; }
-.clock { margin-left: auto; font-variant-numeric: tabular-nums; white-space: nowrap; }
-.mini-status { color: #a1a1aa; white-space: nowrap; }
+.mini-timer { color: #facc15; font-variant-numeric: tabular-nums; white-space: nowrap; margin-left: auto; }
 
 button {
   cursor: pointer;
@@ -73,23 +72,28 @@ button {
 button:hover { background: #3f3f46; }
 button:focus-visible, input:focus-visible { outline: 2px solid #facc15; outline-offset: 2px; }
 
-#toggle-panel { background: transparent; border: none; font-size: 16px; padding: 4px 6px; }
+#toggle-panel { background: transparent; border: none; font-size: 16px; padding: 4px 6px; margin-left: 4px; }
 
 .panel { padding: 4px 14px 14px; }
 .banner { background: #3f6212; border: 1px solid #65a30d; border-radius: 10px; padding: 10px; }
 .hidden { display: none !important; }
-.privacy-note { color: #a1a1aa; font-size: 13px; }
+
+.tabs { display: flex; gap: 6px; margin: 6px 0 2px; }
+.tab-btn { flex: 1; background: #18181b; }
+.tab-btn.active { background: #3f3f46; font-weight: 700; border-color: #facc15; }
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
 
 .card {
   background: #18181b;
   border: 1px solid #27272a;
   border-radius: 14px;
   padding: 12px;
-  margin: 10px 0;
+  margin: 8px 0;
 }
 
 .card h2 { margin: 0 0 8px; font-size: 15px; }
-.timer-display { font-size: 40px; font-weight: 800; margin: 4px 0; font-variant-numeric: tabular-nums; }
+.timer-display { font-size: 36px; font-weight: 800; margin: 4px 0; font-variant-numeric: tabular-nums; }
 .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin: 8px 0; }
 .settings-row label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: #d4d4d8; }
 
@@ -102,8 +106,17 @@ input[type="text"], input[type="number"] {
   min-width: 0;
 }
 
+input[type="number"] { width: 76px; }
+
 #todo-input { flex: 1; }
-.todo-list, .shelf-list { list-style: none; margin: 8px 0 0; padding: 0; }
+.todo-list, .shelf-list {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  max-height: 260px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
 .todo-list li, .shelf-list li {
   display: flex;
   gap: 8px;
@@ -115,5 +128,4 @@ input[type="text"], input[type="number"] {
 .todo-list li.done span { text-decoration: line-through; color: #a1a1aa; }
 .todo-list li span, .shelf-list li span { flex: 1; }
 .hint { color: #a1a1aa; font-size: 13px; }
-.placeholder-warning { background: #422006; border: 1px solid #b45309; border-radius: 10px; padding: 10px; }
 .footer { color: #a1a1aa; font-size: 12px; text-align: center; }
