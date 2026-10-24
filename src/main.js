@@ -73,32 +73,98 @@
   // v0.2: tinggi jendela membesar disesuaikan per tab, supaya panel
   // tidak perlu di-scroll. Posisi jendela tidak diubah di sini, jadi
   // jendela yang sudah digeser pengguna tetap di tempatnya.
+  // v0.3: mode Bar membuat jendela full-width 32px di atas layar,
+  // diposisikan (0,0) dan tidak bisa digeser — seperti menu bar macOS.
+  // Mode Notch kembali ke pil 440px yang bisa digeser.
   var currentTab = "focus";
   var tabHeights = { focus: 400, todo: 480, other: 540 };
+  var displayMode = load("nfp_mode", "notch"); // "notch" | "bar"
+  function monitorLogicalWidth(callback) {
+    var win = tauriWindow();
+    try {
+      if (win && win.currentMonitor) {
+        var p = win.currentMonitor();
+        if (p && p.then) {
+          p.then(function (m) {
+            callback(Math.round(m.size.width / (m.scaleFactor || 1)));
+          }).catch(function () { callback((window.screen && window.screen.width) || 1920); });
+          return;
+        }
+      }
+    } catch (e) { /* jatuh ke fallback */ }
+    callback((window.screen && window.screen.width) || 1920);
+  }
   function setNotchSize(expanded) {
     var win = tauriWindow();
     if (win && win.setSize) {
       try {
-        var size = expanded
-          ? new window.__TAURI__.window.LogicalSize(440, tabHeights[currentTab] || 540)
-          : new window.__TAURI__.window.LogicalSize(440, 64);
-        win.setSize(size).catch(function () { /* biarkan CSS yang bekerja */ });
+        if (displayMode === "bar") {
+          monitorLogicalWidth(function (w) {
+            try {
+              var h = expanded ? (tabHeights[currentTab] || 540) : 32;
+              win.setSize(new window.__TAURI__.window.LogicalSize(w, h)).catch(function () { /* biarkan CSS yang bekerja */ });
+              if (win.setPosition) {
+                win.setPosition(new window.__TAURI__.window.LogicalPosition(0, 0)).catch(function () {});
+              }
+            } catch (e) { /* biarkan CSS yang bekerja */ }
+          });
+        } else {
+          var size = expanded
+            ? new window.__TAURI__.window.LogicalSize(440, tabHeights[currentTab] || 540)
+            : new window.__TAURI__.window.LogicalSize(440, 64);
+          win.setSize(size).catch(function () { /* biarkan CSS yang bekerja */ });
+        }
       } catch (e) { /* biarkan CSS yang bekerja */ }
     }
   }
 
   var notch = $("notch");
+  function applyMode(mode, updateWindow) {
+    displayMode = mode;
+    save("nfp_mode", mode);
+    notch.classList.toggle("bar-mode", mode === "bar");
+    document.body.classList.toggle("bar-mode", mode === "bar");
+    var header = notch.querySelector(".notch-bar");
+    if (header) {
+      if (mode === "bar") { header.removeAttribute("data-tauri-drag-region"); }
+      else { header.setAttribute("data-tauri-drag-region", ""); }
+    }
+    var modeBtn = $("btn-mode");
+    if (modeBtn) { modeBtn.textContent = mode === "bar" ? "Notch" : "Bar"; }
+    if (updateWindow) {
+      setNotchSize(notch.classList.contains("expanded"));
+      if (mode === "notch") {
+        // Kembali ke tengah atas setelah dari Bar mode.
+        var win = tauriWindow();
+        if (win && win.setPosition) {
+          monitorLogicalWidth(function (w) {
+            try {
+              win.setPosition(new window.__TAURI__.window.LogicalPosition(Math.round((w - 440) / 2), 0)).catch(function () {});
+            } catch (e) {}
+          });
+        }
+      }
+    }
+  }
+  applyMode(displayMode, true);
   notch.addEventListener("mouseenter", function () {
+    // Bar mode tidak membesar saat hover, supaya bar atas tidak terbuka
+    // tiap kali mouse menyentuh tepi atas layar — panel dibuka lewat ▾.
+    if (displayMode === "bar") { return; }
     notch.classList.add("expanded");
     setNotchSize(true);
   });
   notch.addEventListener("mouseleave", function () {
+    if (displayMode === "bar") { return; }
     notch.classList.remove("expanded");
     setNotchSize(false);
   });
   $("toggle-panel").addEventListener("click", function () {
     var expanded = notch.classList.toggle("expanded");
     setNotchSize(expanded);
+  });
+  $("btn-mode").addEventListener("click", function () {
+    applyMode(displayMode === "bar" ? "notch" : "bar", true);
   });
 
   // ---------- Tab panel ----------
