@@ -6,7 +6,7 @@
 <title>Dock</title>
 <style>
   * { box-sizing: border-box; }
-  html, body { margin: 0; padding: 0; background: transparent; font-family: system-ui, "Segoe UI", Arial, sans-serif; }
+  html, body { margin: 0; padding: 0; background: transparent; font-family: system-ui, "Segoe UI", Arial, sans-serif; overflow: hidden; }
   body { display: flex; justify-content: center; align-items: flex-end; height: 100vh; padding-bottom: 6px; }
   .dock {
     display: flex; gap: 6px; align-items: flex-end;
@@ -47,12 +47,15 @@
       // v0.10: pas-kan ukuran jendela persis ke pil Dock, lalu posisikan
       // ulang di bawah-tengah — tidak ada area jendela kosong yang bisa
       // tampil sebagai kotak putih.
+      // v0.12: tinggi jendela = tinggi pil + padding bawah body (6px),
+      // karena tinggi pil saja membuat isi meluber 6px dan memunculkan
+      // scrollbar vertikal (yang lalu memicu scrollbar horizontal).
       try {
         if (window.__TAURI__ && window.__TAURI__.window) {
           var win = window.__TAURI__.window.getCurrentWindow();
           var pill = document.querySelector(".dock");
           var w = pill ? pill.offsetWidth : 460;
-          var h = pill ? pill.offsetHeight : 64;
+          var h = pill ? pill.offsetHeight + 6 : 70;
           win.setSize(new window.__TAURI__.window.LogicalSize(w, h)).catch(function () {});
           if (win.currentMonitor) {
             win.currentMonitor().then(function (m) {

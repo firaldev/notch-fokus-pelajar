@@ -14,6 +14,7 @@
       <span class="notch-dot" aria-hidden="true"></span>
       <span id="notch-clock" class="notch-clock" aria-live="polite">--:--</span>
       <span class="notch-title">Notch Fokus Pelajar</span>
+      <span id="level-mini" class="level-mini" aria-live="polite"><span id="level-icon" class="level-icon">🔊</span><span class="level-track"><span id="level-fill" class="level-fill"></span></span><span id="level-pct" class="level-pct">50%</span></span>
       <span class="bar-menus" aria-label="Menu bar">
         <button class="bar-menu" type="button" data-bar-page="focus">Fokus</button>
         <button class="bar-menu" type="button" data-bar-page="todo">Tugas</button>
@@ -53,11 +54,12 @@
             <div class="track"><div id="music-fill"></div></div>
             <span id="music-remaining" class="music-time">-00:00</span>
           </div>
-          <p id="music-note" class="hint">Judul dan progres dibaca dari pemutar yang sedang aktif di Windows (Spotify, YouTube, dll.); tombol di bawah mengirim tombol media sistem ke pemutar itu.</p>
+          <p id="music-note" class="hint">Judul dan progres dibaca dari pemutar yang sedang aktif di Windows (Spotify, YouTube, dll.); tombol di bawah mengirim tombol media sistem ke pemutar itu. Tombol Lirik membuka popup lirik lagu yang sedang diputar (dari database lirik gratis, bila tersedia).</p>
           <div class="row">
             <button class="music-btn" type="button" data-music="previous">⏮ Sebelumnya</button>
             <button class="music-btn" type="button" data-music="play-pause">▶ / ⏸ Putar/Jeda</button>
             <button class="music-btn" type="button" data-music="next">Berikutnya ⏭</button>
+            <button class="music-btn" type="button" id="btn-lyrics">Lirik</button>
           </div>
         </section>
       </div>
@@ -152,7 +154,7 @@
       </div>
 
       <footer class="footer">
-        <p>Notch Fokus Pelajar v0.11.0 — lokal, tanpa akun.</p>
+        <p>Notch Fokus Pelajar v0.12.0 — lokal, tanpa akun.</p>
       </footer>
     </section>
   </main>

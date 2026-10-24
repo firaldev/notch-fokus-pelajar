@@ -288,14 +288,52 @@
     });
   }
 
-  // ---------- v0.9: overlay volume (polling level sistem tiap 1 detik) ----------
+  // ---------- v0.12: level volume/kecerahan tampil di bar atas ----------
+  // Menggantikan overlay samping: saat level berubah, isi tengah bar atas
+  // sementara diganti indikator level (ikon + slider + persen) selama
+  // 2,5 detik, lalu kembali seperti semula. Tanpa mengubah ukuran jendela
+  // (kecuali dari garis idle 6px yang dibangunkan dulu ke bar 56px).
+  var showingLevel = false, levelWasIdle = false, levelTimer = null;
+  function showLevel(kind, pct) {
+    var mini = $("level-mini");
+    if (!mini) { return; }
+    $("level-icon").textContent = kind === "brightness" ? "☀" : "🔊";
+    $("level-fill").style.width = pct + "%";
+    $("level-pct").textContent = pct + "%";
+    if (!showingLevel) {
+      levelWasIdle = document.body.classList.contains("notch-idle");
+      showingLevel = true;
+      if (levelWasIdle) {
+        document.body.classList.remove("notch-idle");
+        setNotchSize(false);
+      }
+      var clock = $("notch-clock"); if (clock) { clock.style.display = "none"; }
+      var title = notch.querySelector(".notch-title"); if (title) { title.style.display = "none"; }
+      var timer = $("mini-timer"); if (timer) { timer.style.display = "none"; }
+      mini.classList.add("on");
+    }
+    if (levelTimer) { clearTimeout(levelTimer); }
+    levelTimer = setTimeout(hideLevel, 2500);
+  }
+  function hideLevel() {
+    var mini = $("level-mini");
+    if (mini) { mini.classList.remove("on"); }
+    var clock = $("notch-clock"); if (clock) { clock.style.display = ""; }
+    var title = notch.querySelector(".notch-title"); if (title) { title.style.display = ""; }
+    var timer = $("mini-timer"); if (timer) { timer.style.display = ""; }
+    showingLevel = false;
+    levelTimer = null;
+    if (levelWasIdle) { goIdle(); }
+  }
+
+  // ---------- v0.12: polling level sistem (tampil di bar atas) ----------
   var lastVolume = null, volumeFailures = 0;
   setInterval(function () {
     tauriInvoke("volume_level").then(function (v) {
       if (typeof v !== "number") { return; }
       volumeFailures = 0;
       if (lastVolume !== null && Math.abs(v - lastVolume) >= 2) {
-        tauriInvoke("show_overlay", { kind: "volume", value: Math.round(v) });
+        showLevel("volume", Math.round(v));
       }
       lastVolume = v;
     }).catch(function () {
@@ -310,9 +348,11 @@
     var m = Math.floor(sec / 60), s = sec % 60;
     return (m < 10 ? "0" + m : m) + ":" + (s < 10 ? "0" + s : s);
   }
+  var currentMusicTitle = "", currentMusicArtist = "";
   setInterval(function () {
     tauriInvoke("media_info").then(function (info) {
       if (!info || !info.title) {
+        currentMusicTitle = ""; currentMusicArtist = "";
         $("music-track").textContent = "Tidak ada media";
         $("music-artist").textContent = "";
         $("music-elapsed").textContent = "00:00";
@@ -320,6 +360,7 @@
         $("music-fill").style.width = "0%";
         return;
       }
+      currentMusicTitle = info.title; currentMusicArtist = info.artist || "";
       $("music-track").textContent = info.title;
       $("music-artist").textContent = info.artist || "";
       $("music-elapsed").textContent = fmtTime(info.position_secs);
@@ -330,6 +371,19 @@
     }).catch(function () { /* tidak ada sesi media: biarkan tampilan terakhir */ });
   }, 1000);
 
+  // ---------- v0.12: tombol Lirik membuka popup lirik ----------
+  (function () {
+    var btn = $("btn-lyrics");
+    if (!btn) { return; }
+    btn.addEventListener("click", function () {
+      if (!currentMusicTitle) {
+        showBanner("Putar lagu dulu, baru buka lirik.");
+        return;
+      }
+      tauriInvoke("show_lyrics", { title: currentMusicTitle, artist: currentMusicArtist });
+    });
+  })();
+
   // ---------- v0.11: overlay kecerahan (polling WMI tiap 2 detik) ----------
   var lastBrightness = null, brightnessFailures = 0, brightnessDisabled = false;
   setInterval(function () {
@@ -338,7 +392,7 @@
       if (typeof v !== "number") { return; }
       brightnessFailures = 0;
       if (lastBrightness !== null && Math.abs(v - lastBrightness) >= 2) {
-        tauriInvoke("show_overlay", { kind: "brightness", value: Math.round(v) });
+        showLevel("brightness", Math.round(v));
       }
       lastBrightness = v;
     }).catch(function () {
