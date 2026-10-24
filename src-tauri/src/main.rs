@@ -85,8 +85,8 @@ fn show_overlay(app: tauri::AppHandle, kind: String, value: f64) -> Result<(), S
 fn volume_level() -> Result<f32, String> {
     #[cfg(target_os = "windows")]
     unsafe {
-        use winapi::shared::mmdeviceapi::{eConsole, eRender, CLSID_MMDeviceEnumerator, IID_IMMDeviceEnumerator, IMMDevice, IMMDeviceEnumerator};
-        use winapi::shared::endpointvolume::{IAudioEndpointVolume, IID_IAudioEndpointVolume};
+        use winapi::um::mmdeviceapi::{eConsole, eRender, CLSID_MMDeviceEnumerator, IID_IMMDeviceEnumerator, IMMDevice, IMMDeviceEnumerator};
+        use winapi::um::endpointvolume::{IAudioEndpointVolume, IID_IAudioEndpointVolume};
         use winapi::um::combaseapi::{CoCreateInstance, CoInitializeEx, CLSCTX_ALL};
         use winapi::um::objbase::COINIT_APARTMENTTHREADED;
         use std::ptr::null_mut;
