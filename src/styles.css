@@ -4,6 +4,7 @@ html, body {
   margin: 0;
   padding: 0;
   background: transparent;
+  overflow: hidden;
   color: #f2f2f2;
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
   font-size: 14px;
@@ -23,9 +24,12 @@ body {
   min-height: 100vh;
 }
 
+/* v0.17: max-width lama (100vw - 16px) membuat notch hanya 424px di
+   jendela 440px — 8px celah transparan di tiap sisi yang membingkai
+   notch sebagai "kotak" bersama bayangan jendela. Notch kini selebar
+   jendela persis (440px), tanpa celah sisi. */
 .notch {
   width: 440px;
-  max-width: calc(100vw - 16px);
   height: 56px;
   overflow: hidden;
   background: #000000;
@@ -89,6 +93,9 @@ body.music-pill .notch { border-radius: 0 0 16px 16px; }
    otomatis bersembunyi saat pil musik aktif lewat aturan music-pill). */
 .notch-robot { background: transparent; border: none; padding: 2px; flex-shrink: 0; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; }
 .notch-robot:hover { background: transparent; }
+/* v0.17: tombol chrome notch tidak boleh memunculkan garis fokus apa pun
+   saat diklik/dihover — ring fokus kuning generik hanya untuk tombol panel. */
+.notch-robot:focus, .notch-robot:focus-visible { outline: none; }
 .robot-anim { display: block; width: 26px; height: 26px; }
 .robot-anim svg { width: 100%; height: 100%; display: block; }
 .robot-eyes { transition: transform 0.25s ease; transform-box: fill-box; transform-origin: center; }

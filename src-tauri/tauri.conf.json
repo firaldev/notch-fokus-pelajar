@@ -13,6 +13,7 @@
         "minHeight": 6,
         "minWidth": 200,
         "resizable": false,
+        "shadow": false,
         "skipTaskbar": true,
         "title": "Notch Fokus Pelajar",
         "transparent": true,
@@ -27,6 +28,7 @@
         "minHeight": 40,
         "minWidth": 200,
         "resizable": false,
+        "shadow": false,
         "skipTaskbar": true,
         "title": "Dock",
         "transparent": true,
@@ -42,6 +44,7 @@
         "minHeight": 240,
         "minWidth": 80,
         "resizable": false,
+        "shadow": false,
         "skipTaskbar": true,
         "title": "Overlay",
         "transparent": true,
@@ -70,5 +73,5 @@
   },
   "identifier": "id.notchfokuspelajar.app",
   "productName": "Notch Fokus Pelajar",
-  "version": "0.16.0"
+  "version": "0.17.0"
 }

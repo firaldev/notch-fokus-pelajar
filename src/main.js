@@ -131,8 +131,10 @@
     }
     if (win && win.setSize) {
       try {
-        var w = pill ? (musicPillWidth > 0 ? musicPillWidth : 320) : 440;
-        var h = expanded ? expandedHeight() : (pill ? 32 : 56);
+        /* v0.17: ukuran jendela HARUS bilangan bulat — ukuran fraksional
+           di DPI scaling (125%/150%) membulatkan jadi 1px tepi terang. */
+        var w = Math.round(pill ? (musicPillWidth > 0 ? musicPillWidth : 320) : 440);
+        var h = Math.round(expanded ? expandedHeight() : (pill ? 32 : 56));
         win.setSize(new window.__TAURI__.window.LogicalSize(w, h)).catch(function () { /* biarkan CSS yang bekerja */ });
         if (w !== lastWinWidth) {
           lastWinWidth = w;
