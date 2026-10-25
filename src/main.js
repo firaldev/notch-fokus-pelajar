@@ -76,10 +76,17 @@
   // v0.3: mode Bar membuat jendela full-width 32px di atas layar,
   // diposisikan (0,0) dan tidak bisa digeser — seperti menu bar macOS.
   // Mode Notch kembali ke pil 440px yang bisa digeser.
-  var pages = ["music", "focus", "water", "todo", "shelf", "status"];
-  var pageTitles = { music: "Musik", focus: "Pomodoro", water: "Water Reminder", todo: "To-do Tugas", shelf: "Shelf", status: "Status" };
+  var pages = ["music", "focus", "focus-settings", "water", "water-today", "todo", "shelf", "status", "pengaturan"];
+  var pageTitles = { music: "Musik", focus: "Pomodoro", "focus-settings": "Atur Timer", water: "Water Reminder", "water-today": "Air Hari Ini", todo: "To-do Tugas", shelf: "Shelf", status: "Status", pengaturan: "Pengaturan" };
   var currentPage = "music";
-  var pageHeights = { music: 250, focus: 420, water: 540, todo: 480, shelf: 420, status: 380 };
+  // v0.17: ukuran panel terbuka TETAP — SATU-SATUNYA sumber angka ukuran
+  // jendela. Diukur dari kode: slide Musik render ~288px (panel
+  // scrollHeight 230 + header 56 + 2, diukur Chromium headless);
+  // NOTCH_HEIGHT 320 memberi ruang aman ~30px untuk variasi font Windows
+  // (Segoe UI) supaya tidak ada halaman yang terpotong. Jendela TIDAK
+  // boleh di-resize saat pindah slide — konten yang menyesuaikan.
+  var NOTCH_WIDTH = 440;
+  var NOTCH_HEIGHT = 320;
   // v0.14: mode Bar dihapus total — hanya mode Notch. Bersihkan setelan lama.
   try { window.localStorage.removeItem("nfp_mode"); } catch (e) {}
   var musicPillActive = false, musicPillWidth = 0;
@@ -98,21 +105,6 @@
     } catch (e) { /* jatuh ke fallback */ }
     callback((window.screen && window.screen.width) || 1920);
   }
-  // v0.13: tinggi panel mengikuti isi — tiap halaman kecil dan seimbang,
-  // tanpa ruang kosong berlebih. Menggantikan tabel pageHeights yang
-  // membuat halaman berlebih tinggi (mis. Shelf) atau terasa jumbo.
-  // pageHeights tinggal jadi fallback bila panel tidak terukur.
-  function expandedHeight() {
-    try {
-      var panel = $("panel");
-      var headerH = 56;
-      if (panel) {
-        var h = panel.scrollHeight;
-        if (h && h > 0) { return headerH + h + 2; }
-      }
-    } catch (e) {}
-    return pageHeights[currentPage] || 540;
-  }
   var lastWinWidth = 440;
   function setNotchSize(expanded) {
     var win = tauriWindow();
@@ -126,15 +118,17 @@
       document.body.classList.remove("music-pill");
       if (n) {
         n.style.width = "";
-        n.style.height = expanded ? (expandedHeight() + "px") : "";
+        /* v0.17: tinggi panel terbuka selalu NOTCH_HEIGHT — bukan
+           mengikuti konten halaman aktif. */
+        n.style.height = expanded ? (NOTCH_HEIGHT + "px") : "";
       }
     }
     if (win && win.setSize) {
       try {
         /* v0.17: ukuran jendela HARUS bilangan bulat — ukuran fraksional
            di DPI scaling (125%/150%) membulatkan jadi 1px tepi terang. */
-        var w = Math.round(pill ? (musicPillWidth > 0 ? musicPillWidth : 320) : 440);
-        var h = Math.round(expanded ? expandedHeight() : (pill ? 32 : 56));
+        var w = Math.round(pill ? (musicPillWidth > 0 ? musicPillWidth : 320) : NOTCH_WIDTH);
+        var h = Math.round(expanded ? NOTCH_HEIGHT : (pill ? 32 : 56));
         win.setSize(new window.__TAURI__.window.LogicalSize(w, h)).catch(function () { /* biarkan CSS yang bekerja */ });
         if (w !== lastWinWidth) {
           lastWinWidth = w;
@@ -267,6 +261,34 @@
   var dockThemeBtn = $("btn-dock-theme");
   if (dockThemeBtn) {
     dockThemeBtn.addEventListener("click", function () { applyDockTheme(dockTheme === "light" ? "dark" : "light"); });
+  }
+
+  // ---------- v0.17: aplikasi berjalan di dock (nyala/mati + pengecualian) ----------
+  // Disimpan lokal; jendela dock membaca kunci ini tiap polling (2 detik)
+  // — tidak perlu event antar-jendela.
+  var runningOn = true;
+  function runningSetUI() {
+    var t = $("btn-running-toggle");
+    if (t) { t.textContent = runningOn ? "Aplikasi Berjalan: Nyala" : "Aplikasi Berjalan: Mati"; }
+  }
+  (function initRunning() {
+    try { runningOn = window.localStorage.getItem("nfp_running_apps") !== "off"; } catch (e) { runningOn = true; }
+    runningSetUI();
+    var input = $("running-block-input");
+    if (input) {
+      try { input.value = window.localStorage.getItem("nfp_running_apps_block") || ""; } catch (e) {}
+      input.addEventListener("change", function () {
+        try { window.localStorage.setItem("nfp_running_apps_block", input.value); } catch (e) {}
+      });
+    }
+  })();
+  var runningBtn = $("btn-running-toggle");
+  if (runningBtn) {
+    runningBtn.addEventListener("click", function () {
+      runningOn = !runningOn;
+      try { window.localStorage.setItem("nfp_running_apps", runningOn ? "on" : "off"); } catch (e) {}
+      runningSetUI();
+    });
   }
 
   // ---------- v0.16: maskot robot di bar atas ----------

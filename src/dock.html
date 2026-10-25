@@ -9,15 +9,17 @@
   html, body { margin: 0; padding: 0; background: transparent; font-family: system-ui, "Segoe UI", Arial, sans-serif; overflow: hidden; }
   body { display: flex; justify-content: center; align-items: flex-end; height: 100vh; padding-bottom: 6px; }
   .dock {
-    display: flex; gap: 6px; align-items: flex-end;
+    display: flex; gap: 10px; align-items: center; flex-wrap: nowrap;
+    overflow-x: auto; scrollbar-width: none;
     /* v0.15: dock lebih lebar (~720px, kira-kira 2x desain lama) tapi
        tinggi tetap ramping; lebar tumbuh dinamis bila ikon bertambah. */
     min-width: 720px; justify-content: space-evenly;
     /* v0.15: tema Gelap jadi default (abu-abu #4A4A4F, bukan hitam pekat). */
     background: #4A4A4F;
     border: 1px solid #626268;
-    border-radius: 20px; padding: 7px 10px;
+    border-radius: 20px; padding: 8px 12px;
   }
+  .dock::-webkit-scrollbar { display: none; }
   /* v0.15: tema Terang — bilah putih/translusen + blur + teks gelap. */
   .dock.light {
     background: rgba(255, 255, 255, 0.88);
@@ -38,18 +40,31 @@
   .dock.light .dock-btn .tip { background: #fff; color: #111; border: 1px solid #DCDDE2; }
   .dock-btn .dot {
     position: absolute; bottom: 2px; left: 50%; transform: translateX(-50%);
-    width: 5px; height: 5px; border-radius: 50%; background: currentColor; opacity: 0.9;
+    width: 5px; height: 5px; border-radius: 50%; background: currentColor; opacity: 0.55;
   }
+  /* v0.17: titik aplikasi foreground lebih terang dari aplikasi berjalan biasa. */
+  .dock-btn .dot.fg { background: #4ade80; opacity: 1; }
   .dock-btn {
     position: relative; width: 48px; height: 48px; border: none; border-radius: 12px;
     background: #2a2a35; color: #f2f2f2; cursor: pointer; padding: 7px;
+    /* v0.17: semua ikon satu kotak 48px, isi rata tengah vertikal+horizontal. */
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
     transition: transform 0.15s ease;
   }
-  .dock-btn:hover { transform: scale(1.35) translateY(-6px); }
+  /* v0.17: hover HANYA transform scale 1.1x (tidak menggeser layout);
+     ruang transparan 14px di atas pil (lihat fitDockWindow) mencegah
+     ikon terpotong batas window. */
+  .dock-btn:hover { transform: scale(1.1) translateY(-2px); }
   /* v0.17: tombol dock tidak boleh memunculkan garis fokus saat
      diklik/dihover — dock adalah chrome, bukan konten panel. */
   .dock-btn:focus, .dock-btn:focus-visible { outline: none; }
-  .dock-btn svg { width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .dock-btn svg { width: 28px; height: 28px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  /* v0.17: ikon aplikasi berjalan — gambar asli exe, atau inisial bila gagal. */
+  .dock-btn .app-icon { width: 28px; height: 28px; border-radius: 6px; display: block; }
+  .dock-btn .app-initial { font-size: 16px; font-weight: 700; line-height: 1; }
+  @keyframes dock-in { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  .dock-btn.app-in { animation: dock-in 0.25s ease; }
+  .dock-btn.app-out { transition: transform 0.18s ease, opacity 0.18s ease; transform: scale(0.5); opacity: 0; }
   .dock-btn .tip {
     position: absolute; left: 50%; bottom: 58px; transform: translateX(-50%);
     background: #111; color: #fff; font-size: 12px; padding: 4px 8px; border-radius: 8px;
@@ -83,25 +98,42 @@
     // scrollbar vertikal (yang lalu memicu scrollbar horizontal).
     // v0.15: dijadikan fungsi agar bisa dipanggil ulang tiap ikon dock
     // bertambah (lebar dock tumbuh dinamis, tetap bawah-tengah).
+    // v0.17: tinggi jendela = tinggi pil + 14px ruang transparan di atas
+    // (untuk hover scale 1.1x, tanpa terpotong) + 6px bawah; lebar
+    // dibatasi 90% layar, selebihnya scroll horizontal halus di dalam pil
+    // (scrollbar disembunyikan, dock tidak bertumpuk ke baris baru).
     function fitDockWindow() {
       try {
         if (window.__TAURI__ && window.__TAURI__.window) {
           var win = window.__TAURI__.window.getCurrentWindow();
           var pill = document.querySelector(".dock");
+          if (pill) { pill.style.width = ""; }
+          /* v0.17: lebar alami = offsetWidth (termasuk border pil) —
+             scrollWidth saja membuat jendela 1px lebih sempit dari pil
+             sehingga border kanan terpotong. */
+          var natural = pill ? pill.offsetWidth : 720;
           /* v0.17: ukuran jendela HARUS bilangan bulat dan sama persis
              dengan konten — tepi fraksional di DPI scaling bisa tampil
              sebagai garis terang di sudut dock. */
-          var w = Math.round(pill ? pill.offsetWidth : 460);
-          var h = Math.round(pill ? pill.offsetHeight + 6 : 70);
-          win.setSize(new window.__TAURI__.window.LogicalSize(w, h)).catch(function () {});
+          var h = Math.round(pill ? pill.offsetHeight + 20 : 86);
+          var done = function (mw, mh) {
+            var w = natural;
+            if (mw && w > Math.floor(mw * 0.9)) {
+              w = Math.floor(mw * 0.9);
+              if (pill) { pill.style.width = w + "px"; }
+            } else if (pill) { pill.style.width = ""; }
+            w = Math.round(w);
+            win.setSize(new window.__TAURI__.window.LogicalSize(w, h)).catch(function () {});
+            if (mw && mh) {
+              win.setPosition(new window.__TAURI__.window.LogicalPosition(Math.round((mw - w) / 2), Math.round(mh - h - 48))).catch(function () {});
+            }
+          };
           if (win.currentMonitor) {
             win.currentMonitor().then(function (m) {
-              if (!m) { return; }
-              var mw = m.size.width / (m.scaleFactor || 1);
-              var mh = m.size.height / (m.scaleFactor || 1);
-              win.setPosition(new window.__TAURI__.window.LogicalPosition(Math.round((mw - w) / 2), Math.round(mh - h - 48))).catch(function () {});
-            }).catch(function () {});
-          }
+              if (!m) { done(0, 0); return; }
+              done(m.size.width / (m.scaleFactor || 1), m.size.height / (m.scaleFactor || 1));
+            }).catch(function () { done(0, 0); });
+          } else { done(0, 0); }
         }
       } catch (e) {}
     }
@@ -181,22 +213,93 @@
         var base = parts.length ? parts[parts.length - 1] : String(path);
         return base.replace(/\.(exe|lnk|bat|cmd)$/i, "");
       }
-      function renderDockApps() {
+      // v0.17: ikon dock = gabungan aplikasi berjalan (otomatis, dari
+      // Rust) + aplikasi Shelf (tersimpan). Satu daftar, cegah dobel
+      // per executable (nama file tanpa ekstensi, huruf kecil).
+      var runningApps = [];
+      var rendered = {};
+      var iconCache = {};
+      function initialOf(name) {
+        var s = String(name || "?").trim();
+        return (s.charAt(0) || "?").toUpperCase();
+      }
+      function rgbaToDataUrl(b64, size) {
+        try {
+          var bin = window.atob(b64);
+          var bytes = new Uint8Array(bin.length);
+          for (var i = 0; i < bin.length; i++) { bytes[i] = bin.charCodeAt(i); }
+          var c = document.createElement("canvas");
+          c.width = size; c.height = size;
+          c.getContext("2d").putImageData(new ImageData(new Uint8ClampedArray(bytes), size, size), 0, 0);
+          return c.toDataURL();
+        } catch (e) { return null; }
+      }
+      function buildDockItems() {
+        var items = [], seen = {};
+        runningApps.forEach(function (w) {
+          /* v0.17: kunci dedupe = nama exe TANPA ekstensi, huruf kecil —
+             "chrome.exe" (berjalan) dan "Chrome.lnk" (Shelf) adalah satu
+             aplikasi yang sama dan hanya boleh tampil satu ikon. */
+          var key = "exe:" + String(w.exeName || w.title || "").replace(/\.exe$/i, "").toLowerCase();
+          if (!w.exeName && !w.title) { return; }
+          if (seen[key]) { return; }
+          seen[key] = true;
+          items.push({ key: key, name: w.exeName || w.title, icon: w.iconDataUrl || null, initial: initialOf(w.exeName || w.title), running: true, foreground: !!w.foreground, hwnd: w.hwnd, path: null });
+        });
+        apps.forEach(function (a) {
+          var key = "exe:" + appName(a.path).toLowerCase();
+          if (seen[key]) { return; }
+          seen[key] = true;
+          items.push({ key: key, name: a.name, icon: null, initial: initialOf(a.name), running: false, foreground: false, hwnd: null, path: a.path });
+        });
+        return items;
+      }
+      function renderDockItems() {
         var wrap = document.getElementById("dock-apps");
         var sep = document.getElementById("dock-apps-sep");
         if (!wrap) { return; }
-        wrap.innerHTML = "";
-        apps.forEach(function (a) {
-          var b = document.createElement("button");
-          b.type = "button";
-          b.className = "dock-btn";
-          b.innerHTML = '<svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M3 10h18"/></svg><span class="tip"></span><span class="dot"></span>';
-          b.querySelector(".tip").textContent = a.name;
-          b.title = a.name;
-          b.addEventListener("click", function () { invoke("open_path", { path: a.path }); });
-          wrap.appendChild(b);
+        var items = buildDockItems();
+        var nextKeys = {};
+        items.forEach(function (it) {
+          nextKeys[it.key] = true;
+          var b = rendered[it.key];
+          if (!b) {
+            b = document.createElement("button");
+            b.type = "button";
+            b.className = "dock-btn app-in";
+            wrap.appendChild(b);
+            rendered[it.key] = b;
+            (function (btn) { setTimeout(function () { btn.classList.remove("app-in"); }, 300); })(b);
+          }
+          var sig = (it.icon ? "i" : "l") + "|" + (it.running ? "1" : "0") + (it.foreground ? "1" : "0") + "|" + it.name;
+          if (b._sig !== sig) {
+            b._sig = sig;
+            var inner = "";
+            if (it.icon) { inner += '<img class="app-icon" src="' + it.icon + '" alt="">'; }
+            else { inner += '<span class="app-initial">' + it.initial + "</span>"; }
+            inner += '<span class="tip"></span>';
+            if (it.running) { inner += '<span class="dot' + (it.foreground ? " fg" : "") + '"></span>'; }
+            b.innerHTML = inner;
+            var tip = b.querySelector(".tip");
+            if (tip) { tip.textContent = it.name; }
+            b.title = it.name;
+          }
+          b.onclick = function () {
+            if (it.hwnd) { invoke("focus_window", { hwnd: it.hwnd }); }
+            else if (it.path) { invoke("open_path", { path: it.path }); }
+          };
         });
-        if (sep) { sep.style.display = apps.length ? "" : "none"; }
+        Object.keys(rendered).forEach(function (key) {
+          if (!nextKeys[key]) {
+            var b = rendered[key];
+            delete rendered[key];
+            if (b && b.parentNode) {
+              b.classList.add("app-out");
+              (function (btn) { setTimeout(function () { if (btn.parentNode) { btn.parentNode.removeChild(btn); } }, 200); })(b);
+            }
+          }
+        });
+        if (sep) { sep.style.display = items.length ? "" : "none"; }
         fitDockWindow();
       }
       function addDockApp(path) {
@@ -204,7 +307,43 @@
         if (apps.some(function (a) { return a.path === path; })) { return; }
         apps.push({ path: path, name: appName(path) });
         try { window.localStorage.setItem("nfp_dock_apps", JSON.stringify(apps)); } catch (e) {}
-        renderDockApps();
+        renderDockItems();
+      }
+      function blockList() {
+        try {
+          var raw = window.localStorage.getItem("nfp_running_apps_block") || "";
+          return raw.split(",").map(function (s) { return s.trim().toLowerCase(); }).filter(Boolean);
+        } catch (e) { return []; }
+      }
+      // v0.17: polling ringan tiap 2 detik ke command Rust list_windows.
+      // Ikon di-cache per executable di sini (dan di Rust) supaya polling
+      // tidak membebani CPU/RAM.
+      function pollRunning() {
+        try {
+          var enabled = true;
+          try { enabled = window.localStorage.getItem("nfp_running_apps") !== "off"; } catch (e) {}
+          if (!enabled) { runningApps = []; renderDockItems(); return; }
+          var p = invoke("list_windows", {});
+          if (p && p.then) {
+            p.then(function (list) {
+              var blocked = blockList();
+              var out = [];
+              (Array.isArray(list) ? list : []).forEach(function (w) {
+                var exeName = String(w.exe_name || "").toLowerCase();
+                var hit = blocked.some(function (x) { return exeName === x || exeName.replace(/\.exe$/i, "") === x; });
+                if (hit) { return; }
+                var iconDataUrl = null;
+                if (w.icon_b64 && w.icon_size) {
+                  if (!iconCache[exeName]) { iconCache[exeName] = rgbaToDataUrl(w.icon_b64, w.icon_size); }
+                  iconDataUrl = iconCache[exeName];
+                }
+                out.push({ hwnd: w.hwnd, exe: w.exe, exeName: w.exe_name, iconDataUrl: iconDataUrl, foreground: !!w.foreground });
+              });
+              runningApps = out;
+              renderDockItems();
+            }).catch(function () {});
+          }
+        } catch (e) {}
       }
       try {
         var saved = JSON.parse(window.localStorage.getItem("nfp_dock_apps") || "[]");
@@ -218,7 +357,9 @@
         var p = e && e.payload && e.payload.path;
         if (p) { addDockApp(p); }
       });
-      renderDockApps();
+      renderDockItems();
+      pollRunning();
+      setInterval(pollRunning, 2000);
     })();
   </script>
 </body>

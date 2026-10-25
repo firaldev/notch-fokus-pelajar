@@ -23,7 +23,7 @@
       {
         "alwaysOnTop": true,
         "decorations": false,
-        "height": 76,
+        "height": 86,
         "label": "dock",
         "minHeight": 40,
         "minWidth": 200,
@@ -34,7 +34,7 @@
         "transparent": true,
         "url": "dock.html",
         "visible": true,
-        "width": 560
+        "width": 720
       },
       {
         "alwaysOnTop": true,

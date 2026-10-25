@@ -57,14 +57,21 @@
       <div class="page" data-page="focus">
         <section class="card" aria-labelledby="pomodoro-title">
           <h2 id="pomodoro-title">Timer Pomodoro</h2>
-          <p id="timer-display" class="timer-display" aria-live="polite">25:00</p>
-          <p id="timer-mode">Mode: Fokus · Sesi selesai: <span id="sessions">0</span></p>
+          <div class="row timer-row">
+            <span id="timer-display" class="timer-display" aria-live="polite">25:00</span>
+            <span id="timer-mode" class="timer-mode">Mode: Fokus · Sesi selesai: <span id="sessions">0</span></span>
+          </div>
           <div class="row">
             <button id="btn-start" type="button">Mulai</button>
             <button id="btn-pause" type="button">Jeda</button>
             <button id="btn-reset" type="button">Reset</button>
             <button id="btn-switch" type="button">Ganti ke Istirahat</button>
           </div>
+        </section>
+      </div>
+      <div class="page" data-page="focus-settings">
+        <section class="card" aria-labelledby="timer-settings-title">
+          <h2 id="timer-settings-title">Atur Timer</h2>
           <div class="row settings-row">
             <label>Fokus (menit)
               <input id="focus-minutes" type="number" min="1" max="120" value="25" />
@@ -78,26 +85,29 @@
       <div class="page" data-page="water">
         <section class="card" aria-labelledby="reminder-title">
           <h2 id="reminder-title">Pengingat Air &amp; Istirahat</h2>
-          <p>Air: <strong id="water-countdown">—</strong> · Istirahat: <strong id="rest-countdown">—</strong></p>
-          <div class="row settings-row">
-            <label>Air (menit)
-              <input id="water-minutes" type="number" min="5" max="240" value="60" />
-            </label>
-            <label>Istirahat (menit)
-              <input id="rest-minutes" type="number" min="10" max="240" value="90" />
-            </label>
+          <div class="water-grid">
+            <div class="water-col">
+              <p>Air: <strong id="water-countdown">—</strong> · Istirahat: <strong id="rest-countdown">—</strong></p>
+              <label class="inline-label">Air (menit)
+                <input id="water-minutes" type="number" min="5" max="240" value="60" />
+              </label>
+              <label class="inline-label">Istirahat (menit)
+                <input id="rest-minutes" type="number" min="10" max="240" value="90" />
+              </label>
+            </div>
+            <div class="water-col water-actions">
+              <button id="btn-water-done" type="button">Sudah minum 💧</button>
+              <button id="btn-rest-done" type="button">Sudah istirahat 😌</button>
+              <button id="btn-test-notification" type="button">Uji notifikasi</button>
+            </div>
           </div>
-          <div class="row">
-            <button id="btn-water-done" type="button">Sudah minum 💧</button>
-            <button id="btn-rest-done" type="button">Sudah istirahat 😌</button>
-            <button id="btn-test-notification" type="button">Uji notifikasi</button>
-          </div>
-          <p class="hint">Pengingat tampil di aplikasi dan sebagai notifikasi Windows.</p>
-        </section><section class="card" aria-labelledby="water-today-title">
+        </section>
+      </div>
+      <div class="page" data-page="water-today">
+        <section class="card" aria-labelledby="water-today-title">
           <h2 id="water-today-title">Air Hari Ini</h2>
           <p><strong id="water-today">0.0 / 2.0 L · 0%</strong></p>
           <div id="water-chart" class="water-chart"></div>
-          <p class="hint">Tiap tombol Sudah minum menambah 250 ml ke total hari ini. Target harian 2.0 L, tersimpan lokal dan reset tiap hari.</p>
         </section>
       </div>
       <div class="page" data-page="todo">
@@ -108,7 +118,6 @@
             <button id="btn-add-todo" type="button">Tambah</button>
           </div>
           <ul id="todo-list" class="todo-list"></ul>
-          <p class="hint">Tersimpan lokal.</p>
         </section>
       </div>
       <div class="page" data-page="shelf">
@@ -118,7 +127,6 @@
             <button id="btn-add-file" type="button">Tambah file…</button>
             <input id="file-input-fallback" type="file" class="hidden" />
           </div>
-          <p class="hint">Seret file atau aplikasi dari File Explorer ke sini — klik Buka untuk menjalankannya.</p>
           <ul id="shelf-list" class="shelf-list"></ul>
         </section>
       </div>
@@ -128,22 +136,33 @@
           <p>Baterai: <strong id="battery-status">Memeriksa…</strong> · Koneksi: <strong id="online-status">Memeriksa…</strong> · Jam: <strong id="clock">--:--</strong></p>
           <p>Wi-Fi: <strong id="wifi-status">Memeriksa…</strong></p>
         </section>
-        <div class="row">
-          <button id="btn-dock-toggle" type="button">Dock: Aktif</button>
-          <button id="btn-dock-theme" type="button">Tema Dock: Gelap</button>
-          <button id="btn-robot-toggle" type="button">Robot: Nyala</button>
-          <button id="btn-taskbar-toggle" type="button">Taskbar Windows: Tampil</button>
-        </div>
-        <p class="hint">Dock bawah ala MacBook bisa dimatikan lewat tombol di atas, atau tombol silang di Dock itu sendiri.</p>
+      </div>
+      <div class="page" data-page="pengaturan">
+        <section class="card" aria-labelledby="settings-title">
+          <h2 id="settings-title">Pengaturan</h2>
+          <div class="row">
+            <button id="btn-dock-toggle" type="button">Dock: Aktif</button>
+            <button id="btn-dock-theme" type="button">Tema Dock: Gelap</button>
+            <button id="btn-robot-toggle" type="button">Robot: Nyala</button>
+            <button id="btn-taskbar-toggle" type="button">Taskbar Windows: Tampil</button>
+            <button id="btn-running-toggle" type="button">Aplikasi Berjalan: Nyala</button>
+          </div>
+          <div class="row">
+            <input id="running-block-input" type="text" placeholder="Kecualikan aplikasi berjalan: chrome.exe, wa.exe (pisah koma)" maxlength="200" style="flex:1" />
+          </div>
+        </section>
       </div>
 
       <div class="page-dots" aria-label="Halaman">
         <button class="page-dot active" type="button" data-page-dot="music" aria-label="Musik"></button>
         <button class="page-dot" type="button" data-page-dot="focus" aria-label="Pomodoro"></button>
+        <button class="page-dot" type="button" data-page-dot="focus-settings" aria-label="Atur Timer"></button>
         <button class="page-dot" type="button" data-page-dot="water" aria-label="Air"></button>
+        <button class="page-dot" type="button" data-page-dot="water-today" aria-label="Air Hari Ini"></button>
         <button class="page-dot" type="button" data-page-dot="todo" aria-label="Tugas"></button>
         <button class="page-dot" type="button" data-page-dot="shelf" aria-label="Shelf"></button>
         <button class="page-dot" type="button" data-page-dot="status" aria-label="Status"></button>
+        <button class="page-dot" type="button" data-page-dot="pengaturan" aria-label="Pengaturan"></button>
       </div>
 
     </section>

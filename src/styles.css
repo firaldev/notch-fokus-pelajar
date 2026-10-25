@@ -36,7 +36,9 @@ body {
   border: none;
   border-radius: 0 0 28px 28px;
   box-shadow: none;
-  transition: height 0.25s ease, border-radius 0.25s ease;
+  /* v0.17: hanya radius yang beranimasi — tinggi TIDAK beranimasi
+     mengikuti konten (ukuran jendela tetap). */
+  transition: border-radius 0.25s ease;
 }
 
 /* v0.2: panel membesar tanpa scroll. Isi dibagi tab, satu tab satu fokus,
@@ -46,8 +48,10 @@ body {
 /* v0.9: mode Notch TIDAK lagi membesar hanya karena mouse menyentuh tepi
    atas — panel hanya terbuka lewat klik. Saat tidak dipakai, notch menyusut
    jadi garis hitam tipis di tepi atas (lihat body.notch-idle di bawah). */
+/* v0.17: tinggi panel terbuka TETAP — aturan .notch.expanded tidak lagi
+   menetapkan tinggi (tinggi diatur sekali lewat konstanta NOTCH_HEIGHT
+   di main.js, bukan di dua tempat). */
 .notch.expanded {
-  height: 540px;
   border-radius: 0 0 20px 20px;
   overflow: hidden;
 }
@@ -162,8 +166,14 @@ button:focus-visible, input:focus-visible { outline: 2px solid #facc15; outline-
 
 #toggle-panel { background: transparent; border: none; font-size: 16px; padding: 4px 6px; margin-left: 4px; }
 
-.panel { padding: 4px 0 14px; }
-.banner { background: #3f6212; border: 1px solid #65a30d; border-radius: 10px; padding: 10px; }
+/* v0.17: tinggi panel TETAP (bukan mengikuti konten). Jendela notch
+   terbuka selalu 440xNOTCH_HEIGHT (konstanta di main.js); panel mengisi
+   sisa tinggi di bawah header 56px. Konten yang lebih tinggi terpotong
+   — setiap halaman dirancang agar muat (lihat max-height daftar). */
+.panel { padding: 4px 0 14px; position: relative; height: calc(100% - 56px); overflow: hidden; }
+/* v0.17: banner tampil melayang di atas panel (transien), bukan
+   menggeser isi panel ke bawah — tinggi panel tidak boleh berubah. */
+.banner { background: #3f6212; border: 1px solid #65a30d; border-radius: 10px; padding: 10px; position: absolute; top: 0; left: 0; right: 0; z-index: 5; margin: 0; }
 .hidden { display: none !important; }
 
 /* v0.7: halaman gaya Nusa, bukan tab. */
@@ -173,7 +183,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid #facc15; outline-
   display: flex;
   align-items: center;
   gap: 10px;
-  margin: 6px 0 2px;
+  margin: 4px 0 2px;
   padding: 0 10px;
 }
 .page-head { flex: 1; text-align: center; }
@@ -185,7 +195,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid #facc15; outline-
   font-size: 22px;
   padding: 2px 8px;
 }
-.page-dots { display: flex; justify-content: center; gap: 6px; margin: 10px 0 4px; }
+.page-dots { display: flex; justify-content: center; gap: 6px; margin: 6px 0 2px; }
 .page-dot {
   width: 8px;
   height: 8px;
@@ -196,19 +206,25 @@ button:focus-visible, input:focus-visible { outline: 2px solid #facc15; outline-
 }
 .page-dot.active { background: #f2f2f2; }
 
+/* v0.17: pemadatan panel agar semua halaman muat di tinggi tetap. */
+.panel p { margin: 6px 0; }
 .card {
   background: #18181b;
   border: 1px solid #27272a;
   border-left: none;
   border-right: none;
   border-radius: 0;
-  padding: 12px;
-  margin: 8px 0;
+  padding: 10px 12px;
+  margin: 6px 0;
 }
 
-.card h2 { margin: 0 0 8px; font-size: 15px; }
-.timer-display { font-size: 36px; font-weight: 800; margin: 4px 0; font-variant-numeric: tabular-nums; }
-.row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin: 8px 0; }
+.card h2 { margin: 0 0 6px; font-size: 15px; }
+.timer-display { font-size: 28px; font-weight: 800; margin: 0; font-variant-numeric: tabular-nums; }
+.row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin: 6px 0; }
+/* v0.17: baris timer — angka besar + mode kecil sebaris (bukan dua
+   paragraf bertumpuk) supaya slide Pomodoro muat di tinggi tetap. */
+.timer-row { display: flex; align-items: baseline; gap: 10px; }
+.timer-mode { font-size: 13px; color: #d4d4d8; margin-left: auto; white-space: nowrap; }
 .settings-row label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: #d4d4d8; }
 
 input[type="text"], input[type="number"] {
@@ -225,11 +241,13 @@ input[type="number"] { width: 76px; }
 #todo-input { flex: 1; }
 .todo-list, .shelf-list {
   list-style: none;
-  margin: 8px 0 0;
+  margin: 6px 0 0;
   padding: 0;
-  max-height: 260px;
+  /* v0.17: daftar di-scroll internal (scrollbar disembunyikan) supaya
+     halaman tidak pernah melebihi tinggi panel tetap. */
+  max-height: 80px;
   overflow-y: auto;
-  scrollbar-width: thin;
+  scrollbar-width: none;
 }
 .todo-list li, .shelf-list li {
   display: flex;
@@ -248,8 +266,22 @@ input[type="number"] { width: 76px; }
 .notch-bar { justify-content: center; }
 .notch-title, #toggle-panel { display: none; }
 .notch-clock { font-weight: 700; white-space: nowrap; }
-/* Grafik air harian */
-.water-chart { font-size: 12px; color: #d4d4d8; }
+/* v0.17: grafik air di-scroll internal (scrollbar disembunyikan) bila
+   gelas hari ini melebihi ruang slide. */
+.water-chart { font-size: 12px; color: #d4d4d8; max-height: 104px; overflow-y: auto; scrollbar-width: none; }
+.water-chart::-webkit-scrollbar { display: none; }
+/* v0.17: grid pengingat air — kolom kiri (hitung mundur + input),
+   kolom kanan (tombol) — supaya slide tidak memanjang ke bawah. */
+.water-grid { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: start; }
+.water-col { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.water-col .row { margin: 0; }
+.water-actions button { width: 100%; }
+.inline-label { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #d4d4d8; }
+/* v0.17: artis satu baris (ellipsis) — tinggi slide Musik tidak boleh
+   berubah karena judul/artis panjang. */
+#music-artist { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* v0.17: tombol pengaturan dipadatkan (5 tombol dalam 2 baris). */
+.page[data-page="pengaturan"] button { padding: 4px 10px; }
 .water-bar-row { display: flex; gap: 8px; align-items: center; margin: 4px 0; }
 .water-bar { display: inline-block; height: 10px; background: #38bdf8; border-radius: 5px; }
 

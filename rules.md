@@ -54,7 +54,26 @@ Aturan koding proyek ini. Dibaca sebelum mengubah kode apa pun.
 - Tinggi panel dinamis mengikuti konten; jendela pas ke pil saat tidak ada panel.
 - Aplikasi tray-only: tidak ada entri taskbar, tidak ada titlebar.
 
-## 5. Aturan transparansi jendela (anti garis putih)
+## 5. Ukuran jendela tetap (fixed) — aturan utama
+
+- Ukuran panel terbuka SAMA dan TETAP di semua halaman/slide, mengikuti ukuran
+  slide musik sebagai acuan (slide musik adalah yang paling kompak dan benar).
+- Definisikan ukuran sebagai konstanta di SATU tempat (mis. `NOTCH_WIDTH` dan
+  `NOTCH_HEIGHT`) — jangan hardcode angka ukuran di banyak file.
+- Jendela TIDAK boleh di-resize saat pindah slide (tombol panah maupun titik
+  indikator); tidak ada animasi tinggi yang mengikuti konten.
+- Konten yang menyesuaikan ke ukuran tetap, bukan sebaliknya:
+  - Padatkan layout: kecilkan padding, margin, dan ukuran font seperlunya.
+  - Susun elemen ke samping (grid/flex horizontal) supaya tidak memanjang ke bawah.
+  - Ringkas atau hapus teks keterangan yang panjang; gabungkan hanya info penting.
+  - Bila konten tetap tidak muat, pecah jadi slide terpisah. Jangan perbesar
+    jendela dan jangan sampai muncul scrollbar.
+- Jendela tetap rata tengah di bagian atas layar, simetris kiri-kanan, dengan
+  sudut membulat yang sama.
+- State tertutup (pil musik, garis idle) bukan slide — ukurannya mengikuti aturan
+  masing-masing yang sudah ada, tidak ikut ukuran panel.
+
+## 6. Aturan transparansi jendela (anti garis putih)
 
 - Window: `decorations: false`, `transparent: true`, `shadow: false`.
 - CSS: `html, body { background: transparent; margin: 0; overflow: hidden; }`.
@@ -66,7 +85,33 @@ Aturan koding proyek ini. Dibaca sebelum mengubah kode apa pun.
   terang. Bila window di-resize lewat kode (mis. `fitDockWindow`), pastikan hasil
   akhirnya bilangan bulat dan sama dengan lebar konten.
 
-## 6. Hal yang TIDAK BOLEH diubah
+## 7. Aturan dock (ikon & aplikasi berjalan)
+
+- Semua ikon dock berukuran SAMA (mis. 48×48px), sejajar di satu garis tengah
+  vertikal, jarak antar ikon konsisten (flex dengan gap tetap).
+- Dock rata tengah di bawah layar, simetris kiri-kanan, sudut membulat,
+  padding dalam seimbang; tinggi dock tetap dan konsisten.
+- Kelompok ikon dipisah pembatas tipis yang rapi: (1) ikon fitur bawaan,
+  (2) aplikasi yang sedang berjalan, (3) tombol folder dan tombol tutup.
+- Efek hover HANYA lewat `transform: scale` (mis. 1.1x, transisi halus) — tidak
+  boleh menggeser layout atau ikon lain, dan tidak boleh terpotong batas window
+  (beri ruang transparan di dalam window untuk efek hover, tanpa membuat window
+  terlihat lebih besar dari dock).
+- Bila ikon terlalu banyak: lebar dock menyesuaikan sampai batas maksimal
+  (mis. 90% lebar layar), lalu scroll horizontal halus atau ikon mengecil
+  bertahap. Dock tidak boleh bertumpuk ke baris baru.
+- Daftar aplikasi berjalan dikelola OTOMATIS: deteksi jendela Windows yang terlihat
+  (abaikan proses sistem, jendela tersembunyi, dan aplikasi ini sendiri); ikon
+  muncul saat aplikasi dibuka dan hilang saat ditutup, dengan animasi halus.
+- Gunakan polling ringan atau event Windows (EnumWindows / WinEvent hook) agar
+  hemat CPU dan RAM; cache ikon per executable.
+- Ikon aplikasi diambil dari executable-nya; bila gagal, tampilkan ikon default
+  dengan inisial nama aplikasi. Klik ikon memunculkan jendela ke depan (restore
+  dulu bila minimize); beri titik indikator untuk aplikasi yang sedang aktif.
+- Pengaturan fitur ini (nyala/mati + daftar pengecualian) disimpan lokal.
+- Window dock: tidak boleh ada border atau shadow (lihat aturan transparansi).
+
+## 8. Hal yang TIDAK BOLEH diubah
 
 - Identifier dan productName (mengubahnya merusak auto-uninstall versi lama).
 - Target bundle: NSIS saja. Jangan kembalikan `.msi` / `targets: "all"`.
@@ -76,4 +121,6 @@ Aturan koding proyek ini. Dibaca sebelum mengubah kode apa pun.
 - Jangan menambah dependensi Rust baru bila tidak benar-benar perlu (risiko gagal build).
 - Saat memperbaiki bug: ubah seminimal mungkin. Jangan mengubah desain, warna,
   atau fungsi lain di luar yang diminta.
+- Jangan mengubah ukuran jendela per slide; jangan mengembalikan resize jendela
+  yang mengikuti konten.
 - Musik: lirik via lrclib; musik WAJIB jalur yang sudah disepakati, bukan TTS.
