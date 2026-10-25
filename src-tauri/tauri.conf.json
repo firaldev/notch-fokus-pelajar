@@ -66,9 +66,9 @@
       "icons/icon.png",
       "icons/icon.ico"
     ],
-    "targets": "all"
+    "targets": "nsis"
   },
   "identifier": "id.notchfokuspelajar.app",
   "productName": "Notch Fokus Pelajar",
-  "version": "0.15.0"
+  "version": "0.16.0"
 }

@@ -84,6 +84,31 @@ body.music-pill #music-pill { display: block; flex: 1; min-width: 0; text-align:
 body.music-pill .notch-bar { justify-content: center; height: 32px; }
 body.music-pill .notch { border-radius: 0 0 16px 16px; }
 
+/* v0.16: maskot robot di bar atas — mungil, putih membulat, di alur
+   header tepat setelah jam (tidak menggeser titik/jam/timer, dan
+   otomatis bersembunyi saat pil musik aktif lewat aturan music-pill). */
+.notch-robot { background: transparent; border: none; padding: 2px; flex-shrink: 0; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; }
+.notch-robot:hover { background: transparent; }
+.robot-anim { display: block; width: 26px; height: 26px; }
+.robot-anim svg { width: 100%; height: 100%; display: block; }
+.robot-eyes { transition: transform 0.25s ease; transform-box: fill-box; transform-origin: center; }
+.robot-brow { opacity: 0; transition: opacity 0.15s ease; }
+.notch-robot.look-left .robot-eyes { transform: translateX(-2px); }
+.notch-robot.look-right .robot-eyes { transform: translateX(2px); }
+.notch-robot.blink .robot-eyes { transform: scaleY(0.12); }
+.notch-robot.angry .robot-brow { opacity: 1; }
+.notch-robot.angry .robot-smile { display: none; }
+.notch-robot.angry .robot-frown { display: block; }
+.notch-robot.spin .robot-anim { animation: robot-rage 0.7s ease; }
+@keyframes robot-rage {
+  0% { transform: rotate(0deg) translateX(0); }
+  20% { transform: rotate(72deg) translateX(-1px); }
+  40% { transform: rotate(144deg) translateX(1px); }
+  60% { transform: rotate(216deg) translateX(-1px); }
+  80% { transform: rotate(288deg) translateX(1px); }
+  100% { transform: rotate(360deg) translateX(0); }
+}
+
 /* v0.14: sorotan saat file/aplikasi diseret ke atas Shelf. */
 .card.drop-active { outline: 2px dashed #8b8cf8; outline-offset: -2px; background: #26262e; }
 

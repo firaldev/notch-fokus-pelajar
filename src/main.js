@@ -266,6 +266,75 @@
   if (dockThemeBtn) {
     dockThemeBtn.addEventListener("click", function () { applyDockTheme(dockTheme === "light" ? "dark" : "light"); });
   }
+
+  // ---------- v0.16: maskot robot di bar atas ----------
+  // Default NYALA, mungil dan kalem: idle melirik kiri-kanan + kedip,
+  // tanpa suara/popup. Diketuk: mata marah + spin 360 + goyangan kecil.
+  // Saat pil musik aktif, robot bersembunyi otomatis lewat aturan CSS
+  // music-pill (semua anak header kecuali pil disembunyikan).
+  var robotOn = true;
+  var robotBtn = $("notch-robot");
+  var robotTimers = [];
+  function robotSetUI() {
+    var t = $("btn-robot-toggle");
+    if (t) { t.textContent = robotOn ? "Robot: Nyala" : "Robot: Mati"; }
+    if (robotBtn) { robotBtn.style.display = robotOn ? "" : "none"; }
+  }
+  function robotClearTimers() {
+    robotTimers.forEach(function (id) { try { clearTimeout(id); } catch (e) {} });
+    robotTimers = [];
+  }
+  function robotIdleLoop() {
+    if (!robotOn || !robotBtn) { return; }
+    var glance = function () {
+      if (!robotOn || !robotBtn) { return; }
+      var dir = Math.random() < 0.5 ? "look-left" : "look-right";
+      robotBtn.classList.remove("look-left", "look-right");
+      robotBtn.classList.add(dir);
+      robotTimers.push(setTimeout(function () {
+        if (robotBtn) { robotBtn.classList.remove("look-left", "look-right"); }
+        robotTimers.push(setTimeout(glance, 3500 + Math.random() * 4000));
+      }, 900 + Math.random() * 500));
+    };
+    var blink = function () {
+      if (!robotOn || !robotBtn) { return; }
+      robotBtn.classList.add("blink");
+      robotTimers.push(setTimeout(function () {
+        if (robotBtn) { robotBtn.classList.remove("blink"); }
+        robotTimers.push(setTimeout(blink, 2800 + Math.random() * 3500));
+      }, 140));
+    };
+    robotTimers.push(setTimeout(glance, 2000));
+    robotTimers.push(setTimeout(blink, 1500));
+  }
+  try { robotOn = window.localStorage.getItem("nfp_robot") !== "off"; } catch (e) { robotOn = true; }
+  if (robotBtn) {
+    robotBtn.addEventListener("click", function (ev) {
+      try { ev.stopPropagation(); } catch (e) {}
+      if (!robotOn) { return; }
+      robotBtn.classList.remove("spin");
+      void robotBtn.offsetWidth;
+      robotBtn.classList.add("angry", "spin");
+      robotTimers.push(setTimeout(function () {
+        if (robotBtn) { robotBtn.classList.remove("angry", "spin"); }
+      }, 750));
+    });
+  }
+  var robotToggleBtn = $("btn-robot-toggle");
+  if (robotToggleBtn) {
+    robotToggleBtn.addEventListener("click", function () {
+      robotOn = !robotOn;
+      try { window.localStorage.setItem("nfp_robot", robotOn ? "on" : "off"); } catch (e) {}
+      if (!robotOn) {
+        robotClearTimers();
+        if (robotBtn) { robotBtn.classList.remove("look-left", "look-right", "blink", "angry", "spin"); }
+      }
+      robotSetUI();
+      if (robotOn) { robotIdleLoop(); }
+    });
+  }
+  robotSetUI();
+  if (robotOn) { robotIdleLoop(); }
   // Dipanggil saat Buka di Shelf: entri dock (cegah dobel per path),
   // dock dirender live lewat event; daftar juga disimpan lokal.
   function addAppToDock(path) {
