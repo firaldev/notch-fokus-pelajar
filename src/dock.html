@@ -10,9 +10,35 @@
   body { display: flex; justify-content: center; align-items: flex-end; height: 100vh; padding-bottom: 6px; }
   .dock {
     display: flex; gap: 6px; align-items: flex-end;
-    background: rgba(30, 30, 35, 0.6);
-    border: 1px solid rgba(255, 255, 255, 0.18);
+    /* v0.15: dock lebih lebar (~720px, kira-kira 2x desain lama) tapi
+       tinggi tetap ramping; lebar tumbuh dinamis bila ikon bertambah. */
+    min-width: 720px; justify-content: space-evenly;
+    /* v0.15: tema Gelap jadi default (abu-abu #4A4A4F, bukan hitam pekat). */
+    background: #4A4A4F;
+    border: 1px solid #626268;
     border-radius: 20px; padding: 7px 10px;
+  }
+  /* v0.15: tema Terang — bilah putih/translusen + blur + teks gelap. */
+  .dock.light {
+    background: rgba(255, 255, 255, 0.88);
+    -webkit-backdrop-filter: blur(14px) saturate(1.4);
+    backdrop-filter: blur(14px) saturate(1.4);
+    border-color: #DCDDE2;
+  }
+  .dock.light .dock-btn { background: #f2f2f4; color: #1c1c1e; }
+  .dock.light .dock-btn[data-page="music"] { color: #2563eb; }
+  .dock.light .dock-btn[data-page="focus"] { color: #ea580c; }
+  .dock.light .dock-btn[data-page="water"] { color: #0284c7; }
+  .dock.light .dock-btn[data-page="todo"] { color: #16a34a; }
+  .dock.light .dock-btn[data-page="shelf"] { color: #b45309; }
+  .dock.light .dock-btn[data-page="status"] { color: #7c3aed; }
+  .dock.light .dock-btn#dock-explorer { color: #ca8a04; }
+  .dock.light .dock-btn#dock-hide { color: #6b7280; }
+  .dock.light .sep { background: rgba(0, 0, 0, 0.15); }
+  .dock.light .dock-btn .tip { background: #fff; color: #111; border: 1px solid #DCDDE2; }
+  .dock-btn .dot {
+    position: absolute; bottom: 2px; left: 50%; transform: translateX(-50%);
+    width: 5px; height: 5px; border-radius: 50%; background: currentColor; opacity: 0.9;
   }
   .dock-btn {
     position: relative; width: 48px; height: 48px; border: none; border-radius: 12px;
@@ -39,17 +65,22 @@
     <button class="dock-btn" type="button" data-page="shelf"><svg viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg><span class="tip">Shelf</span></button>
     <button class="dock-btn" type="button" data-page="status"><svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-8M22 20H2"/></svg><span class="tip">Status</span></button>
     <span class="sep" aria-hidden="true"></span>
+    <!-- v0.15: ikon aplikasi yang dibuka dari Shelf muncul di sini. -->
+    <span id="dock-apps" style="display:contents"></span>
+    <span class="sep" id="dock-apps-sep" style="display:none" aria-hidden="true"></span>
     <button class="dock-btn" type="button" id="dock-explorer"><svg viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M3 9h18"/></svg><span class="tip">File Explorer</span></button>
     <button class="dock-btn" type="button" id="dock-hide"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9 9l6 6M15 9l-6 6"/></svg><span class="tip">Sembunyikan Dock</span></button>
   </nav>
   <script>
-    (function () {
-      // v0.10: pas-kan ukuran jendela persis ke pil Dock, lalu posisikan
-      // ulang di bawah-tengah — tidak ada area jendela kosong yang bisa
-      // tampil sebagai kotak putih.
-      // v0.12: tinggi jendela = tinggi pil + padding bawah body (6px),
-      // karena tinggi pil saja membuat isi meluber 6px dan memunculkan
-      // scrollbar vertikal (yang lalu memicu scrollbar horizontal).
+    // v0.10: pas-kan ukuran jendela persis ke pil Dock, lalu posisikan
+    // ulang di bawah-tengah — tidak ada area jendela kosong yang bisa
+    // tampil sebagai kotak putih.
+    // v0.12: tinggi jendela = tinggi pil + padding bawah body (6px),
+    // karena tinggi pil saja membuat isi meluber 6px dan memunculkan
+    // scrollbar vertikal (yang lalu memicu scrollbar horizontal).
+    // v0.15: dijadikan fungsi agar bisa dipanggil ulang tiap ikon dock
+    // bertambah (lebar dock tumbuh dinamis, tetap bawah-tengah).
+    function fitDockWindow() {
       try {
         if (window.__TAURI__ && window.__TAURI__.window) {
           var win = window.__TAURI__.window.getCurrentWindow();
@@ -67,7 +98,8 @@
           }
         }
       } catch (e) {}
-    })();
+    }
+    fitDockWindow();
     (function () {
       function invoke(name, args) {
         try {
@@ -102,6 +134,85 @@
           } catch (e) {}
         });
       });
+    })();
+    // ---------- v0.15: tema dock + aplikasi Shelf di dock ----------
+    (function () {
+      function invoke(name, args) {
+        try {
+          if (window.__TAURI__ && window.__TAURI__.core && window.__TAURI__.core.invoke) {
+            return window.__TAURI__.core.invoke(name, args || {});
+          }
+        } catch (e) {}
+        return Promise.resolve(null);
+      }
+      function listen(name, fn) {
+        try {
+          if (window.__TAURI__ && window.__TAURI__.event && window.__TAURI__.event.listen) {
+            return window.__TAURI__.event.listen(name, fn);
+          }
+        } catch (e) {}
+        return Promise.resolve(null);
+      }
+      // Tema: dibaca dari localStorage saat muat, dan diperbarui live
+      // lewat event "nfp-dock-theme" dari jendela utama.
+      function applyTheme(t) {
+        var pill = document.querySelector(".dock");
+        if (pill) { pill.classList.toggle("light", t === "light"); }
+      }
+      try { applyTheme(window.localStorage.getItem("nfp_dock_theme") || "dark"); } catch (e) {}
+      listen("nfp-dock-theme", function (e) {
+        var t = e && e.payload && e.payload.theme;
+        if (t === "light" || t === "dark") {
+          try { window.localStorage.setItem("nfp_dock_theme", t); } catch (err) {}
+          applyTheme(t);
+        }
+      });
+      // Aplikasi yang dibuka dari Shelf: ikon + titik indikator jalan,
+      // cegah dobel per path, klik ikon membuka lagi path itu.
+      var apps = [];
+      function appName(path) {
+        var parts = String(path).split(/[\\\/]/).filter(Boolean);
+        var base = parts.length ? parts[parts.length - 1] : String(path);
+        return base.replace(/\.(exe|lnk|bat|cmd)$/i, "");
+      }
+      function renderDockApps() {
+        var wrap = document.getElementById("dock-apps");
+        var sep = document.getElementById("dock-apps-sep");
+        if (!wrap) { return; }
+        wrap.innerHTML = "";
+        apps.forEach(function (a) {
+          var b = document.createElement("button");
+          b.type = "button";
+          b.className = "dock-btn";
+          b.innerHTML = '<svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M3 10h18"/></svg><span class="tip"></span><span class="dot"></span>';
+          b.querySelector(".tip").textContent = a.name;
+          b.title = a.name;
+          b.addEventListener("click", function () { invoke("open_path", { path: a.path }); });
+          wrap.appendChild(b);
+        });
+        if (sep) { sep.style.display = apps.length ? "" : "none"; }
+        fitDockWindow();
+      }
+      function addDockApp(path) {
+        if (!path) { return; }
+        if (apps.some(function (a) { return a.path === path; })) { return; }
+        apps.push({ path: path, name: appName(path) });
+        try { window.localStorage.setItem("nfp_dock_apps", JSON.stringify(apps)); } catch (e) {}
+        renderDockApps();
+      }
+      try {
+        var saved = JSON.parse(window.localStorage.getItem("nfp_dock_apps") || "[]");
+        if (Array.isArray(saved)) {
+          apps = saved.filter(function (a) { return a && a.path; }).map(function (a) {
+            return { path: a.path, name: a.name || appName(a.path) };
+          });
+        }
+      } catch (e) {}
+      listen("nfp-dock-app-added", function (e) {
+        var p = e && e.payload && e.payload.path;
+        if (p) { addDockApp(p); }
+      });
+      renderDockApps();
     })();
   </script>
 </body>

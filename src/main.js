@@ -241,6 +241,48 @@
   if (dockToggleBtn) {
     dockToggleBtn.addEventListener("click", function () { applyDock(!dockVisible); });
   }
+
+  // ---------- v0.15: tema dock (Gelap default) + aplikasi Shelf di dock ----------
+  var dockTheme = "dark";
+  function setDockThemeUI(t) {
+    var b = $("btn-dock-theme");
+    if (b) { b.textContent = t === "light" ? "Tema Dock: Terang" : "Tema Dock: Gelap"; }
+  }
+  function applyDockTheme(t) {
+    dockTheme = t === "light" ? "light" : "dark";
+    try { window.localStorage.setItem("nfp_dock_theme", dockTheme); } catch (e) {}
+    setDockThemeUI(dockTheme);
+    try {
+      if (window.__TAURI__ && window.__TAURI__.event && window.__TAURI__.event.emit) {
+        window.__TAURI__.event.emit("nfp-dock-theme", { theme: dockTheme });
+      }
+    } catch (e) {}
+  }
+  (function initDockTheme() {
+    try { dockTheme = window.localStorage.getItem("nfp_dock_theme") === "light" ? "light" : "dark"; } catch (e) {}
+    setDockThemeUI(dockTheme);
+  })();
+  var dockThemeBtn = $("btn-dock-theme");
+  if (dockThemeBtn) {
+    dockThemeBtn.addEventListener("click", function () { applyDockTheme(dockTheme === "light" ? "dark" : "light"); });
+  }
+  // Dipanggil saat Buka di Shelf: entri dock (cegah dobel per path),
+  // dock dirender live lewat event; daftar juga disimpan lokal.
+  function addAppToDock(path) {
+    if (!path) { return; }
+    try {
+      var list = JSON.parse(window.localStorage.getItem("nfp_dock_apps") || "[]");
+      if (!Array.isArray(list)) { list = []; }
+      if (list.some(function (a) { return a && a.path === path; })) { return; }
+      list.push({ path: path });
+      window.localStorage.setItem("nfp_dock_apps", JSON.stringify(list));
+    } catch (e) {}
+    try {
+      if (window.__TAURI__ && window.__TAURI__.event && window.__TAURI__.event.emit) {
+        window.__TAURI__.event.emit("nfp-dock-app-added", { path: path });
+      }
+    } catch (e) {}
+  }
   if (window.__TAURI__ && window.__TAURI__.event && window.__TAURI__.event.listen) {
     window.__TAURI__.event.listen("nfp-open-page", function (e) {
       var page = e && e.payload && e.payload.page;
@@ -901,6 +943,7 @@
       openBtn.textContent = "Buka";
       openBtn.addEventListener("click", function () {
         if (item.path) {
+          addAppToDock(item.path);
           tauriInvoke("open_path", { path: item.path }).then(function (result) {
             if (result === null) {
               showBanner("Membuka file hanya didukung di aplikasi Tauri. Path: " + item.path);
