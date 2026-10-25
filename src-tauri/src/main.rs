@@ -442,10 +442,10 @@ unsafe fn exe_icon_raw(exe: &str) -> Option<(String, u32)> {
     use winapi::shared::minwindef::{DWORD, LPVOID, UINT};
     use winapi::um::shellapi::{SHGetFileInfoW, SHFILEINFOW, SHGFI_ICON, SHGFI_SMALLICON};
     use winapi::um::wingdi::{
-        DeleteObject, GetDIBits, GetIconInfo, GetObjectW, BITMAP, BITMAPINFO, BITMAPINFOHEADER,
-        BI_RGB, DIB_RGB_COLORS,
+        DeleteObject, GetDIBits, GetObjectW, BITMAP, BITMAPINFO, BITMAPINFOHEADER, BI_RGB,
+        DIB_RGB_COLORS,
     };
-    use winapi::um::winuser::{DestroyIcon, GetDC, ReleaseDC};
+    use winapi::um::winuser::{DestroyIcon, GetDC, GetIconInfo, ReleaseDC, ICONINFO};
     let wide: Vec<u16> = OsStr::new(exe)
         .encode_wide()
         .chain(std::iter::once(0))
@@ -462,7 +462,7 @@ unsafe fn exe_icon_raw(exe: &str) -> Option<(String, u32)> {
         return None;
     }
     let hicon = shfi.hIcon;
-    let mut info: winapi::um::wingdi::ICONINFO = std::mem::zeroed();
+    let mut info: ICONINFO = std::mem::zeroed();
     let result = if GetIconInfo(hicon, &mut info) == 0 || info.hbmColor.is_null() {
         if !info.hbmMask.is_null() {
             DeleteObject(info.hbmMask as _);
